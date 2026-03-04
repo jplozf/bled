@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# 1. Récupération du nombre de commits (m)
+MINOR=$(git rev-list --count HEAD 2>/dev/null || echo "0")
+
+# 2. Récupération du hash court (abcdef)
+HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "no-git")
+
+# 3. Construction de la partie dynamique (m-abcdef)
+GIT_STR="${MINOR}-${HASH}"
+
+echo "🔨 Injection de la signature Git : $GIT_STR"
+
+# 4. Compilation
+# On injecte uniquement dans GitVersion
+go build -ldflags "-X 'main.GitVersion=${GIT_STR}'" -o bled
+
+if [ $? -eq 0 ]; then
+    echo "✅ Compilation réussie"
+else
+    echo "❌ Erreur de compilation"
+    exit 1
+fi

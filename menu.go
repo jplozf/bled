@@ -1,43 +1,75 @@
+// ****************************************************************************
+//
+//	 _     _          _
+//	| |__ | | ___  __| |
+//	| '_ \| |/ _ \/ _` |
+//	| |_) | |  __/ (_| |
+//	|_.__/|_|\___|\__,_|
+//
+// ****************************************************************************
+// B L E D   -   Copyright © JPL 2026
+// ****************************************************************************
 package main
 
+// ****************************************************************************
+// IMPORTS
+// ****************************************************************************
 import (
+	"bled/conf"
+	"fmt"
+	"strings"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
-// MenuEntry représente une option dans un menu déroulant
+// ****************************************************************************
+// TYPES
+// ****************************************************************************
 type MenuEntry struct {
-	Label    string
-	Shortcut tcell.Key // ex: tcell.KeyCtrlQ
-	Action   func()
+	Label       string
+	Shortcut    tcell.Key
+	Action      func()
+	SubEntries  []MenuEntry
+	Disabled    bool
+	IsCheckable bool
+	Checked     bool
 }
 
-// AppMenuBar est notre composant réutilisable
 type AppMenuBar struct {
 	*tview.Flex
-	app        *tview.Application
-	pages      *tview.Pages
-	buttons    []*tview.Button
-	shortcuts  map[tcell.Key]func() // Table de hachage pour accès rapide
-	activeBtn  int
-	currentPos int
+	app           *tview.Application
+	pages         *tview.Pages
+	buttons       []*tview.Button
+	shortcuts     map[tcell.Key]func()
+	activeBtn     int
+	currentPos    int
+	spacer        *tview.Box
+	menuData      [][]MenuEntry
+	activeList    *tview.List
+	mainPrimitive tview.Primitive
 }
 
+// ****************************************************************************
+// NewAppMenuBar()
+// ****************************************************************************
 func NewAppMenuBar(app *tview.Application, pages *tview.Pages) *AppMenuBar {
 	m := &AppMenuBar{
-		Flex:      tview.NewFlex().SetDirection(tview.FlexColumn),
-		app:       app, // <--- On stocke l'instance
-		pages:     pages,
-		shortcuts: make(map[tcell.Key]func()),
+		Flex:          tview.NewFlex().SetDirection(tview.FlexColumn),
+		app:           app,
+		pages:         pages,
+		mainPrimitive: editor,
+		shortcuts:     make(map[tcell.Key]func()),
 	}
 
-	// Navigation horizontale au clavier
+	// Horizontale navigation between menu buttons with Left/Right keys
 	m.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyRight {
+		switch event.Key() {
+		case tcell.KeyRight:
 			m.activeBtn = (m.activeBtn + 1) % len(m.buttons)
 			m.app.SetFocus(m.buttons[m.activeBtn])
 			return nil
-		} else if event.Key() == tcell.KeyLeft {
+		case tcell.KeyLeft:
 			m.activeBtn = (m.activeBtn - 1 + len(m.buttons)) % len(m.buttons)
 			m.app.SetFocus(m.buttons[m.activeBtn])
 			return nil
@@ -45,54 +77,273 @@ func NewAppMenuBar(app *tview.Application, pages *tview.Pages) *AppMenuBar {
 		return event
 	})
 
+	// Background color for the menu bar
+	m.SetBackgroundColor(tcell.ColorYellow)
 	return m
 }
 
-// AddMenu ajoute un bouton et son menu déroulant associé
+// ****************************************************************************
+// AddMenu()
+// ****************************************************************************
 func (m *AppMenuBar) AddMenu(title string, entries []MenuEntry) *AppMenuBar {
-	xOffset := m.currentPos
-	width := len(title) + 4
-
-	list := tview.NewList().ShowSecondaryText(false)
-	list.SetBorder(true)
-
-	for _, entry := range entries {
-		action := entry.Action
-		list.AddItem(entry.Label, "", 0, func() {
-			m.pages.RemovePage("dropdown")
-			if action != nil {
-				action()
-			}
-		})
-
-		// Enregistrement du raccourci global s'il existe
-		if entry.Shortcut != tcell.KeyRune {
-			m.shortcuts[entry.Shortcut] = action
-		}
+	m.menuData = append(m.menuData, entries)
+	if m.spacer != nil {
+		m.RemoveItem(m.spacer)
 	}
 
-	btn := tview.NewButton(title).SetSelectedFunc(func() {
-		dropdown := tview.NewGrid().
-			SetColumns(xOffset, 22, 0).
-			SetRows(1, list.GetItemCount()+2, 0).
-			AddItem(list, 1, 1, 1, 1, 0, 0, true)
-		m.pages.AddPage("dropdown", dropdown, true, true)
-		m.app.SetFocus(list)
+	m.registerShortcuts(entries)
+
+	btn := tview.NewButton(title)
+
+	// On définit explicitement les styles pour CHAQUE état
+	styleNormal := tcell.StyleDefault.Background(tcell.ColorYellow).Foreground(tcell.ColorBlack)
+	styleFocus := tcell.StyleDefault.Background(tcell.ColorOrange).Foreground(tcell.ColorBlack)
+
+	// 1. Style au repos
+	btn.SetStyle(styleNormal)
+	btn.SetLabelColor(tcell.ColorBlack)
+	btn.SetBackgroundColor(tcell.ColorYellow)
+
+	// 2. Style quand le bouton est sélectionné (le fameux bleu par défaut)
+	// On force l'Orange (ou le Jaune) pour écraser le bleu du thème
+	btn.SetActivatedStyle(styleFocus)
+	btn.SetBackgroundColorActivated(tcell.ColorOrange)
+	btn.SetLabelColorActivated(tcell.ColorBlack)
+
+	// Style au repos (Jaune comme la barre)
+	btn.SetBackgroundColor(tcell.ColorYellow)
+	btn.SetLabelColor(tcell.ColorBlack)
+
+	// Style quand on navigue dessus (Orange pour voir où on est)
+	btn.SetBackgroundColorActivated(tcell.ColorOrange)
+	btn.SetLabelColorActivated(tcell.ColorBlack)
+
+	btn.SetSelectedFunc(func() {
+		bx, by, _, _ := btn.GetRect()
+		m.showDropdown(entries, bx, by+1, "dropdown")
 	})
 
 	m.buttons = append(m.buttons, btn)
-	m.AddItem(btn, width, 0, false)
-	m.currentPos += width
+	// On ajoute un peu d'espace (padding) pour que ce soit plus joli
+	m.AddItem(btn, len(title)+2, 0, false)
+
+	m.spacer = tview.NewBox().SetBackgroundColor(tcell.ColorYellow)
+	m.AddItem(m.spacer, 0, 1, false)
+
 	return m
 }
 
-// HandleShortcuts doit être appelé dans le SetInputCapture principal de l'app
-func (m *AppMenuBar) HandleShortcuts(event *tcell.EventKey) *tcell.EventKey {
-	if action, exists := m.shortcuts[event.Key()]; exists {
-		if action != nil {
-			action()
+// ****************************************************************************
+// registerShortcuts()
+// ****************************************************************************
+func (m *AppMenuBar) registerShortcuts(entries []MenuEntry) {
+	for _, e := range entries {
+		if e.Shortcut != tcell.KeyRune && e.Action != nil {
+			m.shortcuts[e.Shortcut] = e.Action
 		}
-		return nil // On consomme l'événement
+		if len(e.SubEntries) > 0 {
+			m.registerShortcuts(e.SubEntries)
+		}
+	}
+}
+
+// ****************************************************************************
+// showDropdown()
+// ****************************************************************************
+func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string) {
+	// 1. Calcul de la largeur dynamique
+	maxLabelWidth := 0
+	for _, entry := range entries {
+		length := len(entry.Label) + 3
+		if entry.IsCheckable {
+			length += 2
+		} // Espace pour "[x] "
+		if len(entry.SubEntries) > 0 {
+			length += 2
+		}
+		if length > maxLabelWidth {
+			maxLabelWidth = length
+		}
+	}
+	listWidth := maxLabelWidth + 2
+
+	if listWidth < 15 { // Largeur minimale pour que ce ne soit pas trop étroit
+		listWidth = 15
+	}
+
+	listHeight := len(entries)
+
+	// Détection de bord d'écran
+	_, _, sw, sh := m.pages.GetInnerRect()
+	if sw > 0 && x+listWidth > sw {
+		x = sw - listWidth
+	}
+	if sh > 0 && y+listHeight > sh {
+		y = sh - listHeight
+	}
+
+	list := tview.NewList().ShowSecondaryText(false)
+	list.SetBorder(false)
+
+	// 1. LE FOND GLOBAL DU COMPOSANT
+	list.SetBackgroundColor(conf.GetColor(config.MenuBgColor))
+
+	// 2. LE TEXTE PAR DÉFAUT (Non sélectionné)
+	// On force le noir sur jaune pour TOUS les items
+	list.SetMainTextColor(conf.GetColor(config.MenuTextColor))
+
+	// 3. L'ITEM SÉLECTIONNÉ (Votre barre rouge)
+	list.SetSelectedBackgroundColor(conf.GetColor(config.MenuSelectedColor))
+	list.SetSelectedTextColor(tcell.ColorWhite)
+
+	// 4. TRÈS IMPORTANT : Désactiver le style "Focus Only"
+	// Cela force la liste à utiliser vos couleurs même si le focus bégaye
+	list.SetSelectedFocusOnly(false)
+
+	// Si c'est le menu principal (dropdown), on le mémorise
+	if pageName == "dropdown" {
+		m.activeList = list
+	}
+
+	for i := range entries {
+		e := &entries[i]
+		label := e.Label
+
+		prefix := "  " // Un peu d'espace à gauche
+		if e.IsCheckable {
+			if e.Checked {
+				prefix = "[\u221A] "
+			} else {
+				prefix = "[ ] "
+			}
+		}
+
+		// On prépare le label SANS balise de fond (:)
+		// On ajoute juste des espaces pour que la barre de sélection (rouge)
+		// fasse toute la largeur du menu.
+		padding := strings.Repeat(" ", maxLabelWidth+1-len(label)-len(prefix))
+		displayLabel := prefix + label + padding
+
+		if e.Disabled {
+			displayLabel = fmt.Sprintf("[%s]%s[%s]", conf.GetColor(config.MenuDisabledColor), displayLabel, conf.GetColor(config.MenuTextColor))
+		} else if len(e.SubEntries) > 0 {
+			// On remplace le dernier espace par la flèche
+			displayLabel = displayLabel[:len(displayLabel)-1] + ">"
+		}
+
+		list.AddItem(displayLabel, "", 0, func() {
+			if e.Disabled {
+				return
+			}
+
+			// Si c'est coché, on inverse l'état
+			if e.IsCheckable {
+				e.Checked = !e.Checked
+				// Note : On ne ferme pas le menu pour que l'utilisateur
+				// voie le changement, ou on le ferme selon votre choix UX.
+				m.closeAllMenus()
+			} else if len(e.SubEntries) == 0 {
+				m.closeAllMenus()
+			}
+
+			if e.Action != nil {
+				e.Action()
+			}
+		})
+	}
+
+	// --- LA CORRECTION RADICALE ---
+	// On définit la zone de dessin de la liste manuellement
+	list.SetRect(x, y, listWidth, listHeight)
+
+	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// --- NAVIGATION DANS LE SOUS-MENU ---
+		if pageName == "submenu" {
+			if event.Key() == tcell.KeyLeft {
+				m.pages.RemovePage("submenu")
+				m.app.SetFocus(m.activeList) // Retour au parent direct
+				return nil
+			}
+
+			// Si on veut passer à l'item SUIVANT du parent avec Droite/Gauche
+			if event.Key() == tcell.KeyRight || event.Key() == tcell.KeyLeft {
+				m.pages.RemovePage("submenu")
+
+				// Déplacer la sélection dans la liste parente
+				curr := m.activeList.GetCurrentItem()
+				count := m.activeList.GetItemCount()
+				if event.Key() == tcell.KeyRight {
+					m.activeList.SetCurrentItem((curr + 1) % count)
+				} else {
+					m.activeList.SetCurrentItem((curr - 1 + count) % count)
+				}
+
+				// Simuler un appui sur Droite pour ouvrir le nouveau sous-menu
+				// On peut soit appeler récursivement, soit redonner le focus
+				m.app.SetFocus(m.activeList)
+				// Optionnel : Vous pouvez ici tester si le nouvel item a un sous-menu et l'ouvrir
+				return nil
+			}
+		}
+
+		// --- NAVIGATION DANS LE DROPDOWN PRINCIPAL ---
+		if pageName == "dropdown" {
+			// Si on appuie sur Droite sur un item SANS sous-menu
+			// ou sur Gauche n'importe quand -> On change de menu (Fichier -> Edition)
+			idx := list.GetCurrentItem()
+			if (event.Key() == tcell.KeyRight && len(entries[idx].SubEntries) == 0) || event.Key() == tcell.KeyLeft {
+				m.closeAllMenus()
+				if event.Key() == tcell.KeyRight {
+					m.activeBtn = (m.activeBtn + 1) % len(m.buttons)
+				} else {
+					m.activeBtn = (m.activeBtn - 1 + len(m.buttons)) % len(m.buttons)
+				}
+				m.OpenCurrentMenu()
+				return nil
+			}
+		}
+
+		if event.Key() == tcell.KeyEsc {
+			m.closeAllMenus()
+			return nil
+		}
+		return event
+	})
+
+	list.SetRect(x, y, listWidth, listHeight)
+	m.pages.AddPage(pageName, list, false, true)
+	m.app.SetFocus(list)
+}
+
+// ****************************************************************************
+// closeAllMenus()
+// ****************************************************************************
+func (m *AppMenuBar) closeAllMenus() {
+	m.pages.RemovePage("dropdown")
+	m.pages.RemovePage("submenu")
+	m.activeList = nil
+	m.app.SetFocus(m.Flex)
+	m.app.SetFocus(m.mainPrimitive)
+}
+
+// ****************************************************************************
+// HandleShortcuts()
+// ****************************************************************************
+func (m *AppMenuBar) HandleShortcuts(event *tcell.EventKey) *tcell.EventKey {
+	if action, ok := m.shortcuts[event.Key()]; ok {
+		action()
+		return nil
 	}
 	return event
+}
+
+// ****************************************************************************
+// OpenCurrentMenu()
+// ****************************************************************************
+func (m *AppMenuBar) OpenCurrentMenu() {
+	if m.activeBtn < len(m.buttons) {
+		btn := m.buttons[m.activeBtn]
+		bx, by, _, _ := btn.GetRect()
+		m.showDropdown(m.menuData[m.activeBtn], bx, by+1, "dropdown")
+	}
 }
