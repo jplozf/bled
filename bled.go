@@ -26,10 +26,11 @@ import (
 // VARS
 // ****************************************************************************
 var (
-	app     *tview.Application
-	menuBar *AppMenuBar
-	pages   *tview.Pages
-	status  *tview.TextView
+	app          *tview.Application
+	menuBar      *AppMenuBar
+	pages        *tview.Pages
+	status       *tview.TextView
+	messageQueue = make(chan string, 100) // queue for status messages, with a buffer of 100 messages
 )
 
 // MAJOR Version number, injected at build time
@@ -93,4 +94,33 @@ func main() {
 // ****************************************************************************
 func getFullVersion() string {
 	return fmt.Sprintf("%s.%s", MAJOR, GitVersion)
+}
+
+// ****************************************************************************
+// ShowWelcomePopup()
+// ****************************************************************************
+func ShowWelcomePopup() {
+	msg := fmt.Sprintf("Welcome to Bled v%s\n\nVisit the GitHub repository :\nhttps://github.com/jplozf/bled", getFullVersion())
+	MsgBox = MsgBox.OK("Welcome", msg, nil, 0, "main", editor)
+	pages.AddPage("msgNewVersion", MsgBox.Popup(), true, false)
+	pages.ShowPage("msgNewVersion")
+}
+
+func safeQuit() {
+	if CurrentFile.FemtoBuffer != nil && CurrentFile.FemtoBuffer.Modified() {
+		// Afficher un dialogue de confirmation (OUI / NON / ANNULER)
+		confirm := tview.NewModal().
+			SetText("Modifications non enregistrées. Quitter quand même ?").
+			AddButtons([]string{"Quitter sans enregistrer", "Annuler"}).
+			SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+				if buttonIndex == 0 {
+					app.Stop()
+				} else {
+					pages.RemovePage("confirmQuit")
+				}
+			})
+		pages.AddPage("confirmQuit", confirm, false, true)
+	} else {
+		app.Stop()
+	}
 }

@@ -16,6 +16,7 @@ package main
 // ****************************************************************************
 import (
 	"bled/conf"
+	"bled/utils"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -30,17 +31,20 @@ import (
 // VARS
 // ****************************************************************************
 var (
-	fileMenu    []MenuEntry
-	viewEntries []MenuEntry
-	editor      *femto.View
-	config      conf.Config
+	fileMenu                                                             []MenuEntry
+	editEntries                                                          []MenuEntry
+	helpEntries                                                          []MenuEntry
+	editor                                                               *femto.View
+	config                                                               conf.Config
+	MsgBox                                                               *Dialog
+	statusFilePos, statusSize, statusModified, statusTime, statusMessage *tview.TextView
 )
 
 // ****************************************************************************
 // setUI()
 // ****************************************************************************
 func setUI() {
-	config = conf.LoadConfig("config.json")
+	config = conf.LoadConfig()
 	tview.Styles.PrimitiveBackgroundColor = conf.GetColor(config.MenuBgColor)
 	tview.Styles.PrimaryTextColor = conf.GetColor(config.MenuTextColor)
 
@@ -53,7 +57,7 @@ func setUI() {
 	status.SetBackgroundColor(conf.GetColor(config.MenuBgColor))
 	status.SetTextColor(conf.GetColor(config.MenuTextColor))
 
-	// --- L'ÉDITEUR ---
+	// EDITOR
 	buffer := femto.NewBufferFromString(string(""), "./dummy")
 	editor = femto.NewView(buffer)
 	editor.Buf.Settings["keepautoindent"] = true
@@ -61,77 +65,56 @@ func setUI() {
 	editor.Buf.Settings["scrollbar"] = true
 	editor.Buf.Settings["statusline"] = false
 
-	// --- LE MENU ---
+	// MENUS
 	menuBar = NewAppMenuBar(app, pages)
 
 	fileMenu = []MenuEntry{
-		{Label: "New", Action: func() { /*...*/ }},
+		{Label: "New", Action: func() { newFile() }},
 		{Label: "Open", Action: func() { /*...*/ }},
-		{Label: "Save", Disabled: true, Action: func() { /*...*/ }},    // Désactivé par défaut
-		{Label: "Save as", Disabled: true, Action: func() { /*...*/ }}, // Désactivé par défaut
-		{Label: "Quit", Shortcut: tcell.KeyCtrlQ, Action: func() { app.Stop() }},
+		{Label: "Save", Disabled: true, Action: func() { saveFile() }},
+		{Label: "Save as", Action: func() { showSaveAsDialog() }},
+		{Label: "Quit", Shortcut: tcell.KeyCtrlQ, Action: func() { safeQuit() }},
 	}
-
-	// Dans la logique de votre éditeur (TextArea)
-	/*
-		editor.SetChangedFunc(func() {
-			if len(editor.GetText()) > 0 {
-				fichierEntries[1].Disabled = false // On active "Sauvegarder" dès qu'il y a du texte
-			} else {
-				fichierEntries[1].Disabled = true
-			}
-		})
-
-		editor.SetMovedFunc(func() {
-			_, _, row, col := editor.GetCursor()
-			// row+1 et col+1 car les index commencent à 0
-			msg := fmt.Sprintf("Ligne: %d, Col: %d | F10: Menu | Ctrl+Q: Quitter", row+1, col+1)
-			updateStatus(msg)
-		})
-	*/
-
-	// Et on ajoute le menu normalement
 	menuBar.AddMenu(" File ", fileMenu)
 
-	viewEntries = []MenuEntry{
-		{
-			Label:       "Numéros de ligne",
-			IsCheckable: true,
-			Checked:     true, // Activé par défaut
-			Action: func() {
-				// On récupère l'état via une variable ou en parcourant le menu
-				// Ici, on bascule l'affichage dans le TextArea
-				// editor.SetShowLineNumbers(!editor.GetShowLineNumbers())
-			},
-		},
-		{
-			Label:       "Mode Sombre",
-			IsCheckable: true,
-			Checked:     false,
-			Action: func() {
-				if editor.GetBackgroundColor() == tcell.ColorBlack {
-					editor.SetBackgroundColor(tcell.ColorWhite)
-					// editor.SetTextStyle(tcell.StyleDefault.Foreground(tcell.ColorBlack))
-				} else {
-					editor.SetBackgroundColor(tcell.ColorBlack)
-					// editor.SetTextStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite))
-				}
-			},
-		},
+	editEntries = []MenuEntry{
+		{Label: "Goto", Action: func() { /*...*/ }},
+		{Label: "Find", Action: func() { /*...*/ }},
+		{Label: "Replace", Action: func() { /*...*/ }},
 	}
+	menuBar.AddMenu(" Edit ", editEntries)
 
-	menuBar.AddMenu(" Affichage ", viewEntries)
+	helpEntries = []MenuEntry{
+		{Label: "Manual", Action: func() { /*...*/ }},
+		{Label: "About", Action: func() { /*...*/ }},
+		{Label: "Settings", Action: func() { /*...*/ }},
+	}
+	menuBar.AddMenu(" Help ", helpEntries)
+
+	// STATUS BAR COMPONENTS
+	statusFilePos = tview.NewTextView().SetDynamicColors(true)
+	statusMessage = tview.NewTextView().SetDynamicColors(true)
+	statusSize = tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
+	statusModified = tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
+	statusTime = tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignRight)
+
+	// Assemblage dans un Flex horizontal
+	statusBar := tview.NewFlex().SetDirection(tview.FlexColumn).
+		AddItem(statusFilePos, 0, 1, false).
+		AddItem(statusMessage, 0, 1, false).
+		AddItem(statusSize, 12, 0, false).
+		AddItem(statusModified, 10, 0, false).
+		AddItem(statusTime, 10, 0, false)
 
 	// --- LAYOUT ---
-	// On empile la barre de menu (hauteur 1) sur l'éditeur (tout le reste)
 	layout := tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(menuBar, 1, 0, false).
-		AddItem(editor, 0, 1, true). // Éditeur (milieu - flexible)
-		AddItem(status, 1, 0, false)
+		AddItem(editor, 0, 1, true).
+		AddItem(statusBar, 1, 0, false)
 
 	pages.AddPage("main", layout, true, true)
-	SetStatus(fmt.Sprintf(" %s v%s", conf.APP_NAME, getFullVersion()))
 
+	// Refresh status bar every 500ms
 	go func() {
 		for {
 			time.Sleep(500 * time.Millisecond) // Prevent too much CPU usage
@@ -140,41 +123,49 @@ func setUI() {
 			})
 		}
 	}()
+
+	startMessageWorker()
+	// Show welcome message on startup
+	ShowWelcomePopup()
 }
 
 // ****************************************************************************
 // SetStatus()
 // ****************************************************************************
 func SetStatus(txt string) {
-	status.SetText(txt)
-	DurationOfTime := time.Duration(conf.STATUS_MESSAGE_DURATION) * time.Second
-	f := func() {
-		status.SetText("")
+	select {
+	case messageQueue <- txt:
+	default:
+		// If the channel is full, we can choose to drop the message or block until there's space.
+		// Here, we choose to drop the message to avoid blocking the application.
 	}
-	time.AfterFunc(DurationOfTime, f)
-	/*
-		splittedText := strings.Split(txt, "\n")
-		if len(splittedText) <= 1 {
-			current := time.Now()
-			conf.LogFile.WriteString(fmt.Sprintf("%s [%s] : %s\n", current.Format("20060102-150405"), SessionID, txt))
-		} else {
-			for _, s := range splittedText {
-				current := time.Now()
-				conf.LogFile.WriteString(fmt.Sprintf("%s [%s] : %s\n", current.Format("20060102-150405"), SessionID, s))
-			}
-		}
-	*/
 }
 
 // ****************************************************************************
 // refreshStatus()
 // ****************************************************************************
 func refreshStatus() {
-	cursor := CurrentFile.FemtoView.Cursor
-	// Femto utilise des coordonnées 0-indexed, on ajoute +1 pour l'humain
-	// statusLeft.SetText(fmt.Sprintf(" [Fichier: %s]", editor.Buf.GetName()))
-	// statusRight.SetText(fmt.Sprintf("Ln %d, Col %d ", cursor.Y+1, cursor.X+1))
-	SetStatus(fmt.Sprintf(" [File: %s] Line: %d, Column: %d", filepath.Base(CurrentFile.FName), cursor.Y+1, cursor.X+1))
+	name := filepath.Base(CurrentFile.FName)
+	if name == "" {
+		name = "[New File]"
+	}
+
+	cursorX, cursorY := editor.Cursor.X, editor.Cursor.Y
+	statusFilePos.SetText(fmt.Sprintf(" %s  Ln %d, Col %d", name, cursorY+1, cursorX+1))
+
+	size := editor.Buf.Len()
+	statusSize.SetText(utils.HumanFileSize(float64(size)))
+
+	modifiedText := ""
+	if CurrentFile.FemtoBuffer != nil && CurrentFile.FemtoBuffer.Modified() {
+		modifiedText = "[red]modified[-]"
+		fileMenu[2].Disabled = false // Enable "Save"
+	} else {
+		modifiedText = ""
+	}
+	statusModified.SetText(modifiedText)
+
+	statusTime.SetText(time.Now().Format("15:04:05 "))
 }
 
 // ****************************************************************************
@@ -189,4 +180,26 @@ func SetTheme(theme string) {
 			editor.SetColorscheme(colorscheme)
 		}
 	}
+}
+
+// ****************************************************************************
+// startMessageWorker()
+// ****************************************************************************
+func startMessageWorker() {
+	go func() {
+		duration := time.Duration(conf.STATUS_MESSAGE_DURATION) * time.Second
+		for msg := range messageQueue {
+			app.QueueUpdateDraw(func() {
+				statusMessage.SetText(msg)
+			})
+
+			time.Sleep(duration)
+
+			app.QueueUpdateDraw(func() {
+				statusMessage.SetText("")
+			})
+
+			time.Sleep(200 * time.Millisecond) // more delay to prevent message overlap if many messages are sent in a short time
+		}
+	}()
 }

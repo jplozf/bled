@@ -14,6 +14,7 @@ package conf
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 
 	"github.com/gdamore/tcell/v2"
 )
@@ -25,28 +26,14 @@ const (
 	APP_URL                 = "https://github.com/jplozf/bled"
 	APP_FOLDER              = ".bled"
 	ICON_MODIFIED           = "●"
-	ICON_DATABASE           = "⛁"
-	ICON_EXPLORER           = "🗁"
 	NEW_FILE_TEMPLATE       = "noname_"
-	NEW_DATABASE_TEMPLATE   = "db_"
-	FILE_LOG                = "bled.log"
-	FILE_INI                = "bled.ini"
-	FILE_FIND_HISTORY       = "find"
-	FILE_SHELL_HISTORY      = "history"
-	FILE_SQL_HISTORY        = "sql"
-	FILE_SHELL_OUTPUT       = "output"
-	FILE_MACROS             = "macros"
+	FILE_CONFIG             = "config.json"
 	FILE_MRU                = "mru"
-	FKEY_LABELS             = "F1=Help F2=Panel F3=Git F4=Command F6=Previous F7=Next F8=Settings F9=Context F10=Menu F12=Exit"
-	CKEY_LABELS             = "Ctrl+E=Explorer Ctrl+F=Find… Ctrl+S=Save Alt+S=Save as… Ctrl+N=New Ctrl+O=Open… Ctrl+T=Close Alt+M=Macros"
 	DEFAULT_COLOR_ACCENT    = "#556B2F"
-	FILE_MAX_PREVIEW        = 1024
-	HASH_THRESHOLD_SIZE     = 1_073_741_824.0
 	COLOR_FOLDER            = tcell.ColorLightGreen
 	COLOR_FILE              = tcell.ColorYellow
 	COLOR_EXECUTABLE        = tcell.ColorLightYellow
 	COLOR_SELECTED          = tcell.ColorRed
-	LABEL_PARENT_FOLDER     = "<UP>"
 )
 
 var Version string
@@ -78,14 +65,38 @@ type SConfigPrivate struct {
 var ConfigGeneral SConfigGeneral
 
 type Config struct {
-	MenuBgColor       string `json:"menu_bg_color"`       // Jaune
-	MenuSelectedColor string `json:"menu_selected_color"` // Rouge
-	MenuTextColor     string `json:"menu_text_color"`     // Noir
-	MenuDisabledColor string `json:"menu_disabled_color"` // Gris
+	MenuBgColor       string `json:"menu_bg_color"`
+	MenuSelectedColor string `json:"menu_selected_color"`
+	MenuTextColor     string `json:"menu_text_color"`
+	MenuDisabledColor string `json:"menu_disabled_color"`
 }
 
-func LoadConfig(path string) Config {
-	// Valeurs par défaut si le fichier n'existe pas
+// ****************************************************************************
+// GetConfigPath()
+// ****************************************************************************
+func GetConfigPath() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return FILE_CONFIG // Fallback
+	}
+
+	configDir := filepath.Join(home, APP_FOLDER)
+
+	err = os.MkdirAll(configDir, 0755)
+	if err != nil {
+		return FILE_CONFIG // Fallback
+	}
+
+	return filepath.Join(configDir, FILE_CONFIG)
+}
+
+// ****************************************************************************
+// LoadConfig()
+// ****************************************************************************
+func LoadConfig() Config {
+	path := GetConfigPath()
+
+	// Valeurs par défaut
 	conf := Config{
 		MenuBgColor:       "yellow",
 		MenuSelectedColor: "red",
@@ -94,13 +105,26 @@ func LoadConfig(path string) Config {
 	}
 
 	data, err := os.ReadFile(path)
-	if err == nil {
-		json.Unmarshal(data, &conf)
+	if err != nil {
+		SaveConfig(path, conf) // Default config saved if not exists
+		return conf
 	}
+
+	json.Unmarshal(data, &conf)
 	return conf
 }
 
-// Fonction utilitaire pour convertir le string JSON en tcell.Color
+// ****************************************************************************
+// SaveConfig()
+// ****************************************************************************
+func SaveConfig(path string, conf Config) {
+	data, _ := json.MarshalIndent(conf, "", "    ")
+	os.WriteFile(path, data, 0644)
+}
+
+// ****************************************************************************
+// GetColor()
+// ****************************************************************************
 func GetColor(name string) tcell.Color {
 	return tcell.GetColor(name)
 }

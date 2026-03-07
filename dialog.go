@@ -476,15 +476,16 @@ func (m *Dialog) setUI() {
 		for _, button := range m.buttons {
 			l := button.GetLabel()
 			var f func()
-			if l == "Yes" {
+			switch l {
+			case "Yes":
 				f = m.doYes
-			} else if l == "No" {
+			case "No":
 				f = m.doNo
-			} else if l == "OK" {
+			case "OK":
 				f = m.doOK
-			} else if l == "Delete" {
+			case "Delete":
 				f = m.doDelete
-			} else {
+			default:
 				f = m.doCancel
 			}
 			m.AddButton(l, f)
@@ -531,12 +532,12 @@ func (m *Dialog) Popup() tview.Primitive {
 	m.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEsc:
-			// ui.PgsApp.SwitchToPage(m.parent)
+			pages.SwitchToPage(m.parent)
 			app.SetFocus(m.focus)
 			return nil
 		case tcell.KeyEnter:
 			if m.dtype == INPUT_CLI {
-				// ui.PgsApp.SwitchToPage(m.parent)
+				pages.SwitchToPage(m.parent)
 				app.SetFocus(m.focus)
 				m.doOK()
 				return nil
@@ -586,7 +587,7 @@ func (m *Dialog) Popup() tview.Primitive {
 // doYes()
 // ****************************************************************************
 func (m *Dialog) doYes() {
-	// ui.PgsApp.SwitchToPage(m.parent)
+	pages.SwitchToPage(m.parent)
 	app.SetFocus(m.focus)
 	if m.done != nil {
 		m.done(BUTTON_YES, m.idx)
@@ -597,7 +598,7 @@ func (m *Dialog) doYes() {
 // doNo()
 // ****************************************************************************
 func (m *Dialog) doNo() {
-	// ui.PgsApp.SwitchToPage(m.parent)
+	pages.SwitchToPage(m.parent)
 	app.SetFocus(m.focus)
 	if m.done != nil {
 		m.done(BUTTON_NO, m.idx)
@@ -608,7 +609,7 @@ func (m *Dialog) doNo() {
 // doCancel()
 // ****************************************************************************
 func (m *Dialog) doCancel() {
-	// ui.PgsApp.SwitchToPage(m.parent)
+	pages.SwitchToPage(m.parent)
 	app.SetFocus(m.focus)
 	if m.done != nil {
 		m.done(BUTTON_CANCEL, m.idx)
@@ -619,7 +620,7 @@ func (m *Dialog) doCancel() {
 // doOK()
 // ****************************************************************************
 func (m *Dialog) doOK() {
-	// ui.PgsApp.SwitchToPage(m.parent)
+	pages.SwitchToPage(m.parent)
 	app.SetFocus(m.focus)
 	switch m.dtype {
 	case INPUT_TEXT:
@@ -648,7 +649,7 @@ func (m *Dialog) doOK() {
 // doDelete()
 // ****************************************************************************
 func (m *Dialog) doDelete() {
-	// ui.PgsApp.SwitchToPage(m.parent)
+	pages.SwitchToPage(m.parent)
 	app.SetFocus(m.focus)
 	switch m.dtype {
 	case INPUT_TEXT:
