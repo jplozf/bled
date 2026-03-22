@@ -15,6 +15,7 @@ package main
 // IMPORTS
 // ****************************************************************************
 import (
+	"bled/conf"
 	"fmt"
 	"os"
 
@@ -31,6 +32,7 @@ var (
 	pages        *tview.Pages
 	status       *tview.TextView
 	messageQueue = make(chan string, 100) // queue for status messages, with a buffer of 100 messages
+	DlgQuit      *Dialog
 )
 
 // MAJOR Version number, injected at build time
@@ -53,15 +55,21 @@ func main() {
 			return nil
 		}
 
-		// F10 Key to toggle focus between menu and editor
-		if event.Key() == tcell.KeyF10 {
+		switch event.Key() {
+		case tcell.KeyF10:
 			if menuBar.HasFocus() {
 				menuBar.closeAllMenus()
 				app.SetFocus(editor)
 			} else {
 				app.SetFocus(menuBar)
-				menuBar.OpenCurrentMenu()
+				menuBar.OpenMenu()
 			}
+			return nil
+		case tcell.KeyF6:
+			prevFile()
+			return nil
+		case tcell.KeyF7:
+			nextFile()
 			return nil
 		}
 		return event
@@ -100,27 +108,46 @@ func getFullVersion() string {
 // ShowWelcomePopup()
 // ****************************************************************************
 func ShowWelcomePopup() {
-	msg := fmt.Sprintf("Welcome to Bled v%s\n\nVisit the GitHub repository :\nhttps://github.com/jplozf/bled", getFullVersion())
+	msg := fmt.Sprintf("Welcome to %s v%s\n\nVisit the GitHub repository :\n%s", conf.APP_NAME, getFullVersion(), conf.APP_URL)
 	MsgBox = MsgBox.OK("Welcome", msg, nil, 0, "main", editor)
 	pages.AddPage("msgNewVersion", MsgBox.Popup(), true, false)
 	pages.ShowPage("msgNewVersion")
 }
 
+// ****************************************************************************
+// safeQuit()
+// ****************************************************************************
 func safeQuit() {
 	if CurrentFile.FemtoBuffer != nil && CurrentFile.FemtoBuffer.Modified() {
-		// Afficher un dialogue de confirmation (OUI / NON / ANNULER)
-		confirm := tview.NewModal().
-			SetText("Modifications non enregistrées. Quitter quand même ?").
-			AddButtons([]string{"Quitter sans enregistrer", "Annuler"}).
-			SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-				if buttonIndex == 0 {
+		DlgQuit = DlgQuit.YesNo("Quit", // Title
+			"You have unsaved changes.\nDo you want to quit without saving ?", // Message
+			func(rc DlgButton, idx int) {
+				if rc == BUTTON_YES {
 					app.Stop()
 				} else {
-					pages.RemovePage("confirmQuit")
+					SetStatus("Canceling quit")
 				}
-			})
-		pages.AddPage("confirmQuit", confirm, false, true)
+			},
+			0,
+			"main", editor)
+		pages.AddPage("dlgQuit", DlgQuit.Popup(), true, false)
+		pages.ShowPage("dlgQuit")
 	} else {
 		app.Stop()
+		fmt.Printf("%s %s v%s - %s\n", conf.APP_ICON, conf.APP_NAME, getFullVersion(), conf.APP_URL)
 	}
+}
+
+// ****************************************************************************
+// openSettings()
+// ****************************************************************************
+func openSettings() {
+	path := conf.GetConfigPath()
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		SetStatus("[red]Error : The configuration file does not exist yet.[-]")
+		return
+	}
+	openFile(path)
+	SetStatus("Configuration loaded : " + path)
+	app.SetFocus(editor)
 }

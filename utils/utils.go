@@ -789,3 +789,41 @@ func PrintCompactNumber(input string) {
 		fmt.Println(line)
 	}
 }
+
+// ****************************************************************************
+// GetMaxLineLength()
+// ****************************************************************************
+func GetMaxLineLength(input string) int {
+	if input == "" {
+		return 0
+	}
+
+	lines := strings.Split(input, "\n")
+
+	maxLen := 0
+	for _, line := range lines {
+		cleanLine := strings.TrimRight(line, "\r")
+		currentLen := utf8.RuneCountInString(cleanLine)
+
+		if currentLen > maxLen {
+			maxLen = currentLen
+		}
+	}
+
+	return maxLen
+}
+
+// ****************************************************************************
+// GetLineCount()
+// ****************************************************************************
+func GetLineCount(input string) int {
+	if input == "" {
+		return 0
+	}
+
+	// On utilise strings.Count pour la performance si on veut juste le chiffre,
+	// mais strings.Split est plus explicite si on manipule déjà le texte.
+	lines := strings.Split(input, "\n")
+
+	return len(lines)
+}

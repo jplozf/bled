@@ -16,6 +16,7 @@ package main
 // ****************************************************************************
 import (
 	"bled/conf"
+	"bled/utils"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -149,11 +150,11 @@ func (m *Dialog) OK(title string, message string, done func(rc DlgButton, idx in
 	}
 
 	m.SetButtonsAlign(tview.AlignCenter)
-	m.SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor)
-	m.SetButtonTextColor(tview.Styles.PrimaryTextColor)
-	m.SetBackgroundColor(tview.Styles.ContrastBackgroundColor).SetBorderPadding(0, 0, 0, 0)
+	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
+	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
-		SetBackgroundColor(tview.Styles.ContrastBackgroundColor).
+		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
 		SetBorderPadding(1, 1, 1, 1)
 	m.buttons = append(m.buttons, tview.NewButton("OK").SetSelectedFunc(m.doOK))
 	return m
@@ -343,7 +344,7 @@ func (m *Dialog) setPath(option string, optionIndex int) {
 		}
 		for _, v := range entries {
 			// Filter hidden files/folders if ShowHidden is false
-			if !conf.ConfigGeneral.ShowHidden && strings.HasPrefix(v.Name(), ".") {
+			if !config.ShowHiddenFiles && strings.HasPrefix(v.Name(), ".") {
 				continue
 			}
 			// Filter files if onlyFolders is true, but allow symlinks to directories
@@ -359,7 +360,7 @@ func (m *Dialog) setPath(option string, optionIndex int) {
 			if v.Type()&os.ModeSymlink != 0 {
 				entryName = fmt.Sprintf("[yellow]%s[white]", v.Name())
 			} else if v.IsDir() {
-				entryName = fmt.Sprintf("[%s]%s[white]", conf.ConfigGeneral.ColorAccent, v.Name())
+				entryName = fmt.Sprintf("[%s]%s[white]", config.ColorAccent, v.Name())
 			} else {
 				entryName = v.Name()
 			}
@@ -467,7 +468,7 @@ func (m *Dialog) setUI() {
 		}
 		m.AddInputField(">", m.Value, 0, nil, nil)
 	default:
-		m.AddTextView("", m.message, 60, 21, false, true)
+		m.AddTextView("", m.message, utils.GetMaxLineLength(m.message)+2, utils.GetLineCount(m.message)+2, false, true)
 		m.GetFormItem(0).(*tview.TextView).SetWrap(false)
 		m.GetFormItem(0).(*tview.TextView).SetDynamicColors(true)
 	}
@@ -491,8 +492,8 @@ func (m *Dialog) setUI() {
 			m.AddButton(l, f)
 			m.width += len(l) + 2
 		}
-		if m.width < len(m.message) {
-			m.width = len(m.message)
+		if m.width < utils.GetMaxLineLength(m.message) {
+			m.width = utils.GetMaxLineLength(m.message)
 		}
 		if m.width < len(m.title) {
 			m.width = len(m.title)
@@ -500,13 +501,13 @@ func (m *Dialog) setUI() {
 		if m.width < (len(m.Path) + 15) {
 			m.width = len(m.Path) + 15
 		}
-		m.width += 10
+		m.width += 2
 		m.height = 9
 		if m.dtype == INPUT_TEXT || m.dtype == INPUT_LIST {
 			m.height += 2
 		}
 	} else {
-		m.width = len(m.message)
+		m.width = utils.GetMaxLineLength(m.message)
 		if m.width < len(m.title) {
 			m.width = len(m.title)
 		}
@@ -517,8 +518,8 @@ func (m *Dialog) setUI() {
 		m.height = 7
 	}
 	if m.dtype == INPUT_NONE {
-		m.width = 64
-		m.height = 27
+		m.width = utils.GetMaxLineLength(m.message) + 6
+		m.height = utils.GetLineCount(m.message) + 8
 	}
 }
 

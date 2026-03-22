@@ -20,55 +20,27 @@ import (
 )
 
 const (
-	STATUS_MESSAGE_DURATION = 3
-	APP_NAME                = "Bled"
-	APP_STRING              = "Bled © jpl@ozf.fr 2026"
-	APP_URL                 = "https://github.com/jplozf/bled"
-	APP_FOLDER              = ".bled"
-	ICON_MODIFIED           = "●"
-	NEW_FILE_TEMPLATE       = "noname_"
-	FILE_CONFIG             = "config.json"
-	FILE_MRU                = "mru"
-	DEFAULT_COLOR_ACCENT    = "#556B2F"
-	COLOR_FOLDER            = tcell.ColorLightGreen
-	COLOR_FILE              = tcell.ColorYellow
-	COLOR_EXECUTABLE        = tcell.ColorLightYellow
-	COLOR_SELECTED          = tcell.ColorRed
+	APP_NAME          = "Bled"
+	APP_STRING        = "Bled © jpl@ozf.fr 2026"
+	APP_URL           = "https://github.com/jplozf/bled"
+	APP_FOLDER        = ".bled"
+	ICON_MODIFIED     = "●"
+	APP_ICON          = "⚶"
+	NEW_FILE_TEMPLATE = "noname_"
+	FILE_CONFIG       = "config.json"
+	FILE_MRU          = "mru"
 )
 
-var Version string
-
-var LogFile *os.File
-
-type SConfigGeneral struct {
-	Theme            string
-	GitUser          string
-	GitKey           string
-	Workspace        string
-	ShowHidden       bool
-	ConfirmExit      bool
-	CleanUpOnExit    bool
-	FormatTime       string
-	FormatDate       string
-	ColorAccent      string
-	InteractiveShell bool
-	OutErrPrefix     bool
-}
-
-type SConfigPrivate struct {
-	UISleepUpdate        int
-	UIGITUpdate          int
-	UIStatusTimeout      int
-	ClearNullFilesOnExit bool
-}
-
-var ConfigGeneral SConfigGeneral
-
 type Config struct {
-	MenuBgColor       string `json:"menu_bg_color"`
-	MenuSelectedColor string `json:"menu_selected_color"`
-	MenuTextColor     string `json:"menu_text_color"`
-	MenuDisabledColor string `json:"menu_disabled_color"`
+	MenuBgColor           string `json:"menu_bg_color"`
+	MenuSelectedColor     string `json:"menu_selected_color"`
+	MenuTextColor         string `json:"menu_text_color"`
+	MenuDisabledColor     string `json:"menu_disabled_color"`
+	ShowWelcomePopup      bool   `json:"show_welcome_popup"`
+	ConfirmOnQuit         bool   `json:"confirm_on_quit"`
+	StatusMessageDuration int    `json:"status_message_duration"`
+	ShowHiddenFiles       bool   `json:"show_hidden_files"`
+	ColorAccent           string `json:"color_accent"`
 }
 
 // ****************************************************************************
@@ -96,12 +68,17 @@ func GetConfigPath() string {
 func LoadConfig() Config {
 	path := GetConfigPath()
 
-	// Valeurs par défaut
+	// Default configuration
 	conf := Config{
-		MenuBgColor:       "yellow",
-		MenuSelectedColor: "red",
-		MenuTextColor:     "black",
-		MenuDisabledColor: "gray",
+		MenuBgColor:           "yellow",
+		MenuSelectedColor:     "red",
+		MenuTextColor:         "black",
+		MenuDisabledColor:     "gray",
+		ShowWelcomePopup:      true,
+		ConfirmOnQuit:         true,
+		StatusMessageDuration: 3,
+		ShowHiddenFiles:       false,
+		ColorAccent:           "#556B2F",
 	}
 
 	data, err := os.ReadFile(path)

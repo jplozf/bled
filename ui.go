@@ -71,11 +71,13 @@ func setUI() {
 	fileMenu = []MenuEntry{
 		{Label: "New", Action: func() { newFile() }},
 		{Label: "Open", Action: func() { /*...*/ }},
-		{Label: "Save", Disabled: true, Action: func() { saveFile() }},
+		{Label: "Save", Disabled: true, Action: func() { saveFile() }, Shortcut: tcell.KeyCtrlS},
 		{Label: "Save as", Action: func() { showSaveAsDialog() }},
 		{Label: "Quit", Shortcut: tcell.KeyCtrlQ, Action: func() { safeQuit() }},
 	}
 	menuBar.AddMenu(" File ", fileMenu)
+
+	// refreshFileMenu()
 
 	editEntries = []MenuEntry{
 		{Label: "Goto", Action: func() { /*...*/ }},
@@ -87,9 +89,10 @@ func setUI() {
 	helpEntries = []MenuEntry{
 		{Label: "Manual", Action: func() { /*...*/ }},
 		{Label: "About", Action: func() { /*...*/ }},
-		{Label: "Settings", Action: func() { /*...*/ }},
+		{Label: "Settings", Action: func() { openSettings() }},
 	}
 	menuBar.AddMenu(" Help ", helpEntries)
+	// fmt.Printf("Boutons enregistrés : %d\n", len(menuBar.buttons))
 
 	// STATUS BAR COMPONENTS
 	statusFilePos = tview.NewTextView().SetDynamicColors(true)
@@ -125,8 +128,11 @@ func setUI() {
 	}()
 
 	startMessageWorker()
+
 	// Show welcome message on startup
-	ShowWelcomePopup()
+	if config.ShowWelcomePopup {
+		ShowWelcomePopup()
+	}
 }
 
 // ****************************************************************************
@@ -151,7 +157,7 @@ func refreshStatus() {
 	}
 
 	cursorX, cursorY := editor.Cursor.X, editor.Cursor.Y
-	statusFilePos.SetText(fmt.Sprintf(" %s  Ln %d, Col %d", name, cursorY+1, cursorX+1))
+	statusFilePos.SetText(fmt.Sprintf("[%s] %s  Ln %d, Col %d", getFilePagination(), name, cursorY+1, cursorX+1))
 
 	size := editor.Buf.Len()
 	statusSize.SetText(utils.HumanFileSize(float64(size)))
@@ -187,7 +193,7 @@ func SetTheme(theme string) {
 // ****************************************************************************
 func startMessageWorker() {
 	go func() {
-		duration := time.Duration(conf.STATUS_MESSAGE_DURATION) * time.Second
+		duration := time.Duration(config.StatusMessageDuration) * time.Second
 		for msg := range messageQueue {
 			app.QueueUpdateDraw(func() {
 				statusMessage.SetText(msg)
@@ -202,4 +208,36 @@ func startMessageWorker() {
 			time.Sleep(200 * time.Millisecond) // more delay to prevent message overlap if many messages are sent in a short time
 		}
 	}()
+}
+
+// ****************************************************************************
+// refreshFileMenu()
+// ****************************************************************************
+func refreshFileMenu() {
+	fileMenu = []MenuEntry{
+		{Label: "New", Action: func() { newFile() }},
+		{Label: "Open", Action: func() { /*...*/ }},
+		{Label: "Save", Disabled: true, Action: func() { saveFile() }, Shortcut: tcell.KeyCtrlS},
+		{Label: "Save as", Action: func() { showSaveAsDialog() }},
+		{Label: "Quit", Shortcut: tcell.KeyCtrlQ, Action: func() { safeQuit() }},
+	}
+
+	for i, f := range efiles {
+		displayName := filepath.Base(f.FName)
+		if displayName == "." || displayName == "" {
+			displayName = "[noname]"
+		}
+
+		prefix := "  "
+		if CurrentFile != nil && f == CurrentFile {
+			prefix = "✓ "
+		}
+
+		targetIdx := i
+		fileMenu = append(fileMenu, MenuEntry{
+			Label:  prefix + displayName,
+			Action: func() { switchDocument(targetIdx) },
+		})
+	}
+	menuBar.UpdateMenu(" File ", fileMenu)
 }

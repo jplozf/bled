@@ -45,9 +45,11 @@ type AppMenuBar struct {
 	activeBtn     int
 	currentPos    int
 	spacer        *tview.Box
-	menuData      [][]MenuEntry
+	menuTitles    []string
+	menuData      map[string][]MenuEntry
 	activeList    *tview.List
 	mainPrimitive tview.Primitive
+	versionView   *tview.TextView
 }
 
 // ****************************************************************************
@@ -78,45 +80,158 @@ func NewAppMenuBar(app *tview.Application, pages *tview.Pages) *AppMenuBar {
 	})
 
 	// Background color for the menu bar
-	m.SetBackgroundColor(tcell.ColorYellow)
+	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
+
+	// Initialisation de la version dès le départ
+	versionStr := "Bled " + getFullVersion()
+	m.versionView = tview.NewTextView().
+		SetTextAlign(tview.AlignRight).
+		SetDynamicColors(true).
+		SetText(versionStr + " ")
+
+	m.versionView.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
+	m.versionView.SetTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+
 	return m
+}
+
+// ****************************************************************************
+// UpdateMenu()
+// ****************************************************************************
+func (m *AppMenuBar) UpdateMenu(title string, entries []MenuEntry) {
+	if m.menuData == nil {
+		m.menuData = make(map[string][]MenuEntry)
+	}
+	// On met à jour uniquement les données
+	m.menuData[title] = entries
+	m.registerShortcuts(entries)
 }
 
 // ****************************************************************************
 // AddMenu()
 // ****************************************************************************
 func (m *AppMenuBar) AddMenu(title string, entries []MenuEntry) *AppMenuBar {
-	m.menuData = append(m.menuData, entries)
-	if m.spacer != nil {
-		m.RemoveItem(m.spacer)
+	if m.menuData == nil {
+		m.menuData = make(map[string][]MenuEntry)
 	}
 
+	// --- Sinon, c'est la création initiale du bouton ---
+	// m.menuTitles = append(m.menuTitles, title)
+	m.menuData[title] = entries
+	m.registerShortcuts(entries)
+	buttonExists := false
+	for _, btn := range m.buttons {
+		if btn.GetLabel() == title {
+			buttonExists = true
+			break
+		}
+	}
+	// 3. Si le bouton n'existe pas, on le crée et on l'ajoute
+	if !buttonExists {
+		btn := tview.NewButton(title)
+
+		// --- Ton code de style (Yellow/Orange) ici ---
+		// On définit explicitement les styles pour CHAQUE état
+		styleNormal := tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuBgColor)).Foreground(conf.GetColor(conf.LoadConfig().MenuTextColor))
+		styleFocus := tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuSelectedColor)).Foreground(conf.GetColor(conf.LoadConfig().MenuTextColor))
+
+		// 1. Style au repos
+		btn.SetStyle(styleNormal)
+		btn.SetLabelColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+		btn.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
+
+		// 2. Style quand le bouton est sélectionné (le fameux bleu par défaut)
+		// On force l'Orange (ou le Jaune) pour écraser le bleu du thème
+		btn.SetActivatedStyle(styleFocus)
+		btn.SetBackgroundColorActivated(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
+		btn.SetLabelColorActivated(conf.GetColor(conf.LoadConfig().MenuTextColor))
+
+		// Style au repos (Jaune comme la barre)
+		btn.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
+		btn.SetLabelColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+
+		// Style quand on navigue dessus (Orange pour voir où on est)
+		btn.SetBackgroundColorActivated(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
+		btn.SetLabelColorActivated(conf.GetColor(conf.LoadConfig().MenuTextColor))
+
+		btn.SetSelectedFunc(func() {
+			bx, by, _, _ := btn.GetRect()
+			m.showDropdown(entries, bx, by+1, "dropdown")
+		})
+
+		btn.SetSelectedFunc(func() {
+			bx, by, _, _ := btn.GetRect()
+			// On récupère les données dynamiques au clic
+			m.showDropdown(m.menuData[title], bx, by+1, "dropdown")
+		})
+
+		m.buttons = append(m.buttons, btn)
+		m.rebuildBar() // On redessine pour inclure le nouveau bouton
+	}
+
+	return m
+}
+
+// ****************************************************************************
+// rebuildBar()
+// ****************************************************************************
+func (m *AppMenuBar) rebuildBar() {
+	// 1. On vide complètement le Flex
+	m.Clear()
+
+	// 2. On ajoute tous les boutons de menu (à gauche)
+	for _, btn := range m.buttons {
+		// On calcule la largeur selon le texte du bouton + padding
+		width := len(btn.GetLabel()) + 2
+		m.AddItem(btn, width, 0, false)
+	}
+
+	// 3. On ajoute le spacer (il prend tout l'espace restant : poids 1)
+	if m.spacer == nil {
+		m.spacer = tview.NewBox().SetBackgroundColor(conf.GetColor(config.MenuBgColor))
+	}
+	m.AddItem(m.spacer, 0, 1, false)
+
+	// 4. On ajoute la version (à droite)
+	if m.versionView != nil {
+		// On récupère le texte brut pour calculer la largeur sans les tags [color]
+		versionText := m.versionView.GetText(true)
+		m.AddItem(m.versionView, len(versionText)+1, 0, false)
+	}
+}
+
+/*
+// ****************************************************************************
+// AddMenu_old()
+// ****************************************************************************
+func (m *AppMenuBar) AddMenu_old(title string, entries []MenuEntry) *AppMenuBar {
+	m.menuData = append(m.menuData, entries)
 	m.registerShortcuts(entries)
 
 	btn := tview.NewButton(title)
 
 	// On définit explicitement les styles pour CHAQUE état
-	styleNormal := tcell.StyleDefault.Background(tcell.ColorYellow).Foreground(tcell.ColorBlack)
-	styleFocus := tcell.StyleDefault.Background(tcell.ColorOrange).Foreground(tcell.ColorBlack)
+	styleNormal := tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuBgColor)).Foreground(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	styleFocus := tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuSelectedColor)).Foreground(conf.GetColor(conf.LoadConfig().MenuTextColor))
 
 	// 1. Style au repos
 	btn.SetStyle(styleNormal)
-	btn.SetLabelColor(tcell.ColorBlack)
-	btn.SetBackgroundColor(tcell.ColorYellow)
+	btn.SetLabelColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	btn.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
 
 	// 2. Style quand le bouton est sélectionné (le fameux bleu par défaut)
 	// On force l'Orange (ou le Jaune) pour écraser le bleu du thème
 	btn.SetActivatedStyle(styleFocus)
-	btn.SetBackgroundColorActivated(tcell.ColorOrange)
-	btn.SetLabelColorActivated(tcell.ColorBlack)
+	btn.SetBackgroundColorActivated(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
+	btn.SetLabelColorActivated(conf.GetColor(conf.LoadConfig().MenuTextColor))
 
 	// Style au repos (Jaune comme la barre)
-	btn.SetBackgroundColor(tcell.ColorYellow)
-	btn.SetLabelColor(tcell.ColorBlack)
+	btn.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
+	btn.SetLabelColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
 
 	// Style quand on navigue dessus (Orange pour voir où on est)
-	btn.SetBackgroundColorActivated(tcell.ColorOrange)
-	btn.SetLabelColorActivated(tcell.ColorBlack)
+	btn.SetBackgroundColorActivated(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
+	btn.SetLabelColorActivated(conf.GetColor(conf.LoadConfig().MenuTextColor))
 
 	btn.SetSelectedFunc(func() {
 		bx, by, _, _ := btn.GetRect()
@@ -124,14 +239,40 @@ func (m *AppMenuBar) AddMenu(title string, entries []MenuEntry) *AppMenuBar {
 	})
 
 	m.buttons = append(m.buttons, btn)
-	// On ajoute un peu d'espace (padding) pour que ce soit plus joli
+
+	// 1. On retire l'ancien spacer et l'ancienne version s'ils existent
+	// Pour éviter de les accumuler à chaque fois qu'on ajoute un menu
+	if m.spacer != nil {
+		m.RemoveItem(m.spacer)
+	}
+	// Si vous avez stocké m.versionView dans votre struct AppMenuBar :
+	if m.versionView != nil {
+		m.RemoveItem(m.versionView)
+	}
+
+	// 2. On ajoute le bouton actuel
 	m.AddItem(btn, len(title)+2, 0, false)
 
-	m.spacer = tview.NewBox().SetBackgroundColor(tcell.ColorYellow)
+	// 3. On recrée le spacer (il occupe tout l'espace vide au milieu)
+	m.spacer = tview.NewBox().SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
 	m.AddItem(m.spacer, 0, 1, false)
+
+	// 4. On ajoute la version COMPLÈTEMENT À DROITE
+	versionStr := conf.APP_ICON + " " + conf.APP_NAME + " " + getFullVersion()
+	m.versionView = tview.NewTextView().
+		SetTextAlign(tview.AlignRight).
+		SetDynamicColors(true).
+		SetText(versionStr + " ")
+
+	m.versionView.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
+	m.versionView.SetTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+
+	// On ajoute la version avec une largeur fixe (longueur du texte + 1)
+	m.AddItem(m.versionView, len(versionStr)+1, 0, false)
 
 	return m
 }
+*/
 
 // ****************************************************************************
 // registerShortcuts()
@@ -341,9 +482,24 @@ func (m *AppMenuBar) HandleShortcuts(event *tcell.EventKey) *tcell.EventKey {
 // OpenCurrentMenu()
 // ****************************************************************************
 func (m *AppMenuBar) OpenCurrentMenu() {
-	if m.activeBtn < len(m.buttons) {
+	if m.activeBtn >= 0 && m.activeBtn < len(m.buttons) {
 		btn := m.buttons[m.activeBtn]
+		title := btn.GetLabel()
 		bx, by, _, _ := btn.GetRect()
-		m.showDropdown(m.menuData[m.activeBtn], bx, by+1, "dropdown")
+		if entries, ok := m.menuData[title]; ok {
+			m.showDropdown(entries, bx, by+1, "dropdown")
+		}
+	}
+}
+
+// ****************************************************************************
+// OpenMenu()
+// ****************************************************************************
+func (m *AppMenuBar) OpenMenu() {
+	btn := m.buttons[0]
+	title := btn.GetLabel()
+	bx, by, _, _ := btn.GetRect()
+	if entries, ok := m.menuData[title]; ok {
+		m.showDropdown(entries, bx, by+1, "dropdown")
 	}
 }
