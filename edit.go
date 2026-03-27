@@ -22,6 +22,7 @@ type efile struct {
 	FName       string
 	Encoding    string
 	Modified    bool
+	ReadOnly    bool
 }
 
 // ****************************************************************************
@@ -35,36 +36,8 @@ var (
 // ****************************************************************************
 // openFile()
 // ****************************************************************************
-func openFile(filename string) {
-	/*
-		content, err := ioutil.ReadFile(filename)
-		if err != nil {
-			SetStatus(fmt.Sprintf("Could not read %v", filename))
-			CurrentFile.FName = filename
-			CurrentFile.FemtoBuffer = femto.NewBufferFromString(string(""), CurrentFile.FName)
-			CurrentFile.FemtoBuffer.Settings["keepautoindent"] = true
-			CurrentFile.FemtoBuffer.Settings["softwrap"] = true
-			CurrentFile.FemtoBuffer.Settings["scrollbar"] = true
-			CurrentFile.FemtoBuffer.Settings["statusline"] = false
-			// We create the view and open the buffer in the editor
-			CurrentFile.FemtoView = femto.NewView(CurrentFile.FemtoBuffer)
-			editor.OpenBuffer(CurrentFile.FemtoBuffer)
-			SetTheme("monokai")
-			SetStatus(fmt.Sprintf("Creating new file %v", filename))
-		} else {
-			CurrentFile.FName = filename
-			CurrentFile.FemtoBuffer = femto.NewBufferFromString(string(content), CurrentFile.FName)
-			CurrentFile.FemtoBuffer.Settings["keepautoindent"] = true
-			CurrentFile.FemtoBuffer.Settings["softwrap"] = true
-			CurrentFile.FemtoBuffer.Settings["scrollbar"] = true
-			CurrentFile.FemtoBuffer.Settings["statusline"] = false
-
-			CurrentFile.FemtoView = femto.NewView(CurrentFile.FemtoBuffer)
-			editor.OpenBuffer(CurrentFile.FemtoBuffer)
-			SetTheme("monokai")
-		}
-	*/
-	// Vérification si déjà ouvert
+func openFile(filename string, readOnly bool) {
+	// Is already open ? Just switch to it
 	for i, f := range efiles {
 		if f.FName == filename {
 			switchDocument(i)
@@ -92,6 +65,7 @@ func openFile(filename string) {
 		FName:       filename,
 		Encoding:    "UTF-8",
 		Modified:    false,
+		ReadOnly:    readOnly,
 	}
 	efiles = append(efiles, newEFile)
 	switchDocument(len(efiles) - 1)
@@ -101,36 +75,56 @@ func openFile(filename string) {
 // newFile()
 // ****************************************************************************
 func newFile() {
-	/*
-		CurrentFile = efile{}
-		CurrentFile.FName = "noname"
-		CurrentFile.FemtoBuffer = femto.NewBufferFromString("", CurrentFile.FName)
-		CurrentFile.FemtoBuffer.Settings["keepautoindent"] = true
-		CurrentFile.FemtoBuffer.Settings["softwrap"] = true
-		CurrentFile.FemtoBuffer.Settings["scrollbar"] = true
-		CurrentFile.FemtoBuffer.Settings["statusline"] = false
-		CurrentFile.FemtoView = femto.NewView(CurrentFile.FemtoBuffer)
-		editor.OpenBuffer(CurrentFile.FemtoBuffer)
-		SetTheme("monokai")
-	*/
-
+	// Find a unique name for the new file (noname, noname-01, noname-02, etc.)
 	tempName := "noname"
+	counter := 1
+
+	// OLoop until we find a name that is not already used by an open file
+	for {
+		found := false
+		for _, f := range efiles {
+			if f.FName == tempName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			break // The name is unique, we can use it
+		}
+		// Otherwise, generate the next name and check again
+		tempName = fmt.Sprintf("noname-%02d", counter)
+		counter++
+	}
+
+	// Create a new buffer with the unique name
 	newBuf := femto.NewBufferFromString("", tempName)
+
+	// Set the buffer settings for the new file
+	newBuf.Settings["keepautoindent"] = true
+	newBuf.Settings["softwrap"] = true
+	newBuf.Settings["scrollbar"] = true
+	newBuf.Settings["statusline"] = false
+
 	newEFile := &efile{
 		FemtoBuffer: newBuf,
 		FName:       tempName,
 		Encoding:    "UTF-8",
 		Modified:    false,
+		ReadOnly:    false,
 	}
 	efiles = append(efiles, newEFile)
 	switchDocument(len(efiles) - 1)
-	SetStatus("New file created")
+	SetStatus(fmt.Sprintf("New file created : %s", tempName))
 }
 
 // ****************************************************************************
 // saveFile()
 // ****************************************************************************
 func saveFile() {
+	if CurrentFile.ReadOnly {
+		SetStatus("[red]Error: Cannot save a read-only file[-]")
+		return
+	}
 	if CurrentFile.FName == "" {
 		SetStatus("[red]Error : No file name defined (use 'Save as')[-]")
 		return
@@ -156,7 +150,8 @@ func showSaveAsDialog() {
 		SetFieldWidth(30)
 
 	inputField.SetDoneFunc(func(key tcell.Key) {
-		if key == tcell.KeyEnter {
+		switch key {
+		case tcell.KeyEnter:
 			path := inputField.GetText()
 			if path != "" {
 				CurrentFile.FName = path
@@ -164,13 +159,13 @@ func showSaveAsDialog() {
 				pages.RemovePage("saveAs")
 				app.SetFocus(editor)
 			}
-		} else if key == tcell.KeyEsc {
+		case tcell.KeyEsc:
 			pages.RemovePage("saveAs")
 			app.SetFocus(editor)
 		}
 	})
 
-	// On centre l'input dans une petite fenêtre
+	// Center the input field in a modal
 	modal := tview.NewFlex().
 		AddItem(nil, 0, 1, false).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
@@ -190,11 +185,12 @@ func switchDocument(index int) {
 		return
 	}
 	CurrentFile = efiles[index]
+
 	editor.Buf = CurrentFile.FemtoBuffer
 	editor.OpenBuffer(CurrentFile.FemtoBuffer)
 	refreshFileMenu()
 	SetStatus("Current file: " + filepath.Base(CurrentFile.FName))
-	SetTheme("monokai")
+	SetTheme(config.Theme)
 }
 
 // ****************************************************************************
@@ -208,7 +204,7 @@ func getFilePagination() string {
 	currentIndex := 0
 	for i, f := range efiles {
 		if f == CurrentFile {
-			currentIndex = i + 1 // +1 car les utilisateurs comptent à partir de 1
+			currentIndex = i + 1 // +1 since we want one-based index for display
 			break
 		}
 	}
@@ -224,7 +220,7 @@ func nextFile() {
 		return
 	}
 
-	// 1. Trouver l'index actuel
+	// Find the current index
 	idx := -1
 	for i, f := range efiles {
 		if f == CurrentFile {
@@ -233,7 +229,7 @@ func nextFile() {
 		}
 	}
 
-	// 2. Calculer le suivant (modulo pour boucler)
+	// Calculate the next index (with wrap-around)
 	nextIdx := (idx + 1) % len(efiles)
 	switchDocument(nextIdx)
 }
@@ -246,7 +242,7 @@ func prevFile() {
 		return
 	}
 
-	// 1. Trouver l'index actuel
+	// Find the current index
 	idx := -1
 	for i, f := range efiles {
 		if f == CurrentFile {
@@ -255,7 +251,7 @@ func prevFile() {
 		}
 	}
 
-	// 2. Calculer le précédent (avec gestion de l'index négatif)
+	// Calculate the previous index (with wrap-around)
 	prevIdx := (idx - 1 + len(efiles)) % len(efiles)
 	switchDocument(prevIdx)
 }

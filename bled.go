@@ -16,6 +16,7 @@ package main
 // ****************************************************************************
 import (
 	"bled/conf"
+	"flag"
 	"fmt"
 	"os"
 
@@ -45,6 +46,12 @@ var GitVersion = "dev"
 // main()
 // ****************************************************************************
 func main() {
+	// Set the flag for read-only mode
+	roFlag := flag.Bool("ro", false, "Open file in read-only mode")
+	flag.Parse() // Analyse the command-line flags. This will populate the roFlag variable with the value provided by the user (true if -ro is used, false otherwise).
+
+	// Remaining command-line arguments (after flags) can be accessed with flag.Args()
+	remainingArgs := flag.Args()
 	// Setup the UI components
 	setUI()
 
@@ -77,18 +84,37 @@ func main() {
 
 	// Editor keyboard's events manager
 	editor.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// On traite la touche
+		if CurrentFile != nil && CurrentFile.ReadOnly {
+			// Only allow navigation keys and some basic actions in read-only mode
+			switch event.Key() {
+			case tcell.KeyUp, tcell.KeyDown, tcell.KeyLeft, tcell.KeyRight,
+				tcell.KeyPgUp, tcell.KeyPgDn, tcell.KeyHome, tcell.KeyEnd:
+				return event
+			default:
+				// If a key produces a character or a modification action, we cancel it (return nil)
+				if event.Rune() != 0 || event.Key() == tcell.KeyEnter || event.Key() == tcell.KeyTab {
+					return nil
+				}
+				return nil
+			}
+		}
+
 		switch event.Key() {
 		case tcell.KeyBackspace, tcell.KeyBackspace2:
 			editor.Backspace()
 		}
-
 		return event
 	})
 
-	if len(os.Args) > 1 {
+	// Open file if provided as a command-line argument (after flags)
+	if len(remainingArgs) > 0 {
+		filename := remainingArgs[0]
+		openFile(filename, *roFlag) // Use the value of roFlag to determine if the file should be opened in read-only mode
+	} else if len(os.Args) > 1 {
 		filename := os.Args[1]
-		openFile(filename)
+		openFile(filename, false)
+	} else {
+		newFile() // Open a new file if no filename is provided
 	}
 
 	// Start the application
@@ -147,7 +173,7 @@ func openSettings() {
 		SetStatus("[red]Error : The configuration file does not exist yet.[-]")
 		return
 	}
-	openFile(path)
+	openFile(path, false)
 	SetStatus("Configuration loaded : " + path)
 	app.SetFocus(editor)
 }

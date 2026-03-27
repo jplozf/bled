@@ -163,7 +163,10 @@ func refreshStatus() {
 	statusSize.SetText(utils.HumanFileSize(float64(size)))
 
 	modifiedText := ""
-	if CurrentFile.FemtoBuffer != nil && CurrentFile.FemtoBuffer.Modified() {
+	if CurrentFile.ReadOnly {
+		modifiedText = "[yellow]READ-ONLY[-]"
+		fileMenu[2].Disabled = true // Disable "Save" if the file is read-only
+	} else if CurrentFile.FemtoBuffer != nil && CurrentFile.FemtoBuffer.Modified() {
 		modifiedText = "[red]modified[-]"
 		fileMenu[2].Disabled = false // Enable "Save"
 	} else {

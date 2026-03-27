@@ -41,6 +41,7 @@ type Config struct {
 	StatusMessageDuration int    `json:"status_message_duration"`
 	ShowHiddenFiles       bool   `json:"show_hidden_files"`
 	ColorAccent           string `json:"color_accent"`
+	Theme                 string `json:"theme"`
 }
 
 // ****************************************************************************
@@ -79,6 +80,7 @@ func LoadConfig() Config {
 		StatusMessageDuration: 3,
 		ShowHiddenFiles:       false,
 		ColorAccent:           "#556B2F",
+		Theme:                 "monokai",
 	}
 
 	data, err := os.ReadFile(path)

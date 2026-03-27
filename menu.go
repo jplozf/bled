@@ -83,7 +83,7 @@ func NewAppMenuBar(app *tview.Application, pages *tview.Pages) *AppMenuBar {
 	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
 
 	// Initialisation de la version dès le départ
-	versionStr := "Bled " + getFullVersion()
+	versionStr := fmt.Sprintf("%s %s %s", conf.APP_ICON, conf.APP_NAME, getFullVersion())
 	m.versionView = tview.NewTextView().
 		SetTextAlign(tview.AlignRight).
 		SetDynamicColors(true).
