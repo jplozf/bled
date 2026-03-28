@@ -234,10 +234,11 @@ func confirmSaveAs(rc DlgButton, idx int) {
 		newName := DlgSaveFileAs.Value
 		err := ioutil.WriteFile(newName, []byte(CurrentFile.FemtoBuffer.String()), 0600)
 		if err == nil {
+			SetStatus(fmt.Sprintf("File %s successfully saved", newName))
 			CurrentFile.FName = newName
-			SetStatus(fmt.Sprintf("File %s successfully saved", CurrentFile.FName))
 			CurrentFile.FemtoBuffer.IsModified = false
-			refreshFileMenu()
+			closeCurrentFile()
+			openFile(newName, false)
 		} else {
 			SetStatus(err.Error())
 		}
