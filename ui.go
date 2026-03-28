@@ -69,25 +69,25 @@ func setUI() {
 	menuBar = NewAppMenuBar(app, pages)
 
 	fileMenu = []MenuEntry{
-		{Label: "New", Action: func() { newFile() }},
-		{Label: "Open", Action: func() { /*...*/ }},
+		{Label: "New", Action: func() { newFile() }, Shortcut: tcell.KeyCtrlN},
+		{Label: "Open", Action: func() { InputFileOpen() }, Shortcut: tcell.KeyCtrlO},
 		{Label: "Save", Disabled: true, Action: func() { saveFile() }, Shortcut: tcell.KeyCtrlS},
-		{Label: "Save as", Action: func() { showSaveAsDialog() }},
+		{Label: "Save as", Action: func() { SaveFileAs() }},
+		{Label: "Close", Action: func() { closeCurrentFile() }, Shortcut: tcell.KeyCtrlT},
 		{Label: "Quit", Shortcut: tcell.KeyCtrlQ, Action: func() { safeQuit() }},
 	}
 	menuBar.AddMenu(" File ", fileMenu)
-
-	// refreshFileMenu()
+	//refreshFileMenu()
 
 	editEntries = []MenuEntry{
-		{Label: "Goto", Action: func() { /*...*/ }},
+		{Label: "Goto", Action: func() { InputGotoLine() }, Shortcut: tcell.KeyCtrlG},
 		{Label: "Find", Action: func() { /*...*/ }},
 		{Label: "Replace", Action: func() { /*...*/ }},
 	}
 	menuBar.AddMenu(" Edit ", editEntries)
 
 	helpEntries = []MenuEntry{
-		{Label: "Manual", Action: func() { /*...*/ }},
+		{Label: "Manual", Action: func() { ShowManual() }, Shortcut: tcell.KeyF1},
 		{Label: "About", Action: func() { /*...*/ }},
 		{Label: "Settings", Action: func() { openSettings() }},
 	}
@@ -218,10 +218,11 @@ func startMessageWorker() {
 // ****************************************************************************
 func refreshFileMenu() {
 	fileMenu = []MenuEntry{
-		{Label: "New", Action: func() { newFile() }},
-		{Label: "Open", Action: func() { /*...*/ }},
+		{Label: "New", Action: func() { newFile() }, Shortcut: tcell.KeyCtrlN},
+		{Label: "Open", Action: func() { InputFileOpen() }, Shortcut: tcell.KeyCtrlO},
 		{Label: "Save", Disabled: true, Action: func() { saveFile() }, Shortcut: tcell.KeyCtrlS},
-		{Label: "Save as", Action: func() { showSaveAsDialog() }},
+		{Label: "Save as", Action: func() { SaveFileAs() }},
+		{Label: "Close", Action: func() { closeCurrentFile() }, Shortcut: tcell.KeyCtrlT},
 		{Label: "Quit", Shortcut: tcell.KeyCtrlQ, Action: func() { safeQuit() }},
 	}
 

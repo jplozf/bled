@@ -95,11 +95,11 @@ func (m *Dialog) YesNoCancel(title string, message string, done func(rc DlgButto
 	}
 
 	m.SetButtonsAlign(tview.AlignCenter)
-	m.SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor)
-	m.SetButtonTextColor(tview.Styles.PrimaryTextColor)
-	m.SetBackgroundColor(tview.Styles.ContrastBackgroundColor).SetBorderPadding(0, 0, 0, 0)
+	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
+	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
-		SetBackgroundColor(tview.Styles.ContrastBackgroundColor).
+		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
 		SetBorderPadding(1, 1, 1, 1)
 	m.buttons = append(m.buttons, tview.NewButton("Yes").SetSelectedFunc(m.doYes))
 	m.buttons = append(m.buttons, tview.NewButton("No").SetSelectedFunc(m.doNo))
@@ -123,11 +123,11 @@ func (m *Dialog) YesNo(title string, message string, done func(rc DlgButton, idx
 	}
 
 	m.SetButtonsAlign(tview.AlignCenter)
-	m.SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor)
-	m.SetButtonTextColor(tview.Styles.PrimaryTextColor)
-	m.SetBackgroundColor(tview.Styles.ContrastBackgroundColor).SetBorderPadding(0, 0, 0, 0)
+	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
+	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
-		SetBackgroundColor(tview.Styles.ContrastBackgroundColor).
+		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
 		SetBorderPadding(1, 1, 1, 1)
 	m.buttons = append(m.buttons, tview.NewButton("Yes").SetSelectedFunc(m.doYes))
 	m.buttons = append(m.buttons, tview.NewButton("No").SetSelectedFunc(m.doNo))
@@ -177,11 +177,11 @@ func (m *Dialog) Input(title string, message string, value string, done func(rc 
 	}
 
 	m.SetButtonsAlign(tview.AlignCenter)
-	m.SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor)
-	m.SetButtonTextColor(tview.Styles.PrimaryTextColor)
-	m.SetBackgroundColor(tview.Styles.ContrastBackgroundColor).SetBorderPadding(0, 0, 0, 0)
+	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
+	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
-		SetBackgroundColor(tview.Styles.ContrastBackgroundColor).
+		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
 		SetBorderPadding(1, 1, 1, 1)
 	m.buttons = append(m.buttons, tview.NewButton("OK").SetSelectedFunc(m.doOK))
 	m.buttons = append(m.buttons, tview.NewButton("Cancel").SetSelectedFunc(m.doCancel))
@@ -207,11 +207,11 @@ func (m *Dialog) Command(title string, message string, value string, done func(r
 
 	m.IValues = 0
 	m.SetButtonsAlign(tview.AlignCenter)
-	m.SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor)
-	m.SetButtonTextColor(tview.Styles.PrimaryTextColor)
-	m.SetBackgroundColor(tview.Styles.ContrastBackgroundColor).SetBorderPadding(0, 0, 0, 0)
+	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
+	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
-		SetBackgroundColor(tview.Styles.ContrastBackgroundColor).
+		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
 		SetBorderPadding(1, 1, 1, 1)
 	return m
 }
@@ -233,11 +233,11 @@ func (m *Dialog) List(title string, message string, values []string, done func(r
 	}
 
 	m.SetButtonsAlign(tview.AlignCenter)
-	m.SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor)
-	m.SetButtonTextColor(tview.Styles.PrimaryTextColor)
-	m.SetBackgroundColor(tview.Styles.ContrastBackgroundColor).SetBorderPadding(0, 0, 0, 0)
+	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
+	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
-		SetBackgroundColor(tview.Styles.ContrastBackgroundColor).
+		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
 		SetBorderPadding(1, 1, 1, 1)
 	m.buttons = append(m.buttons, tview.NewButton("OK").SetSelectedFunc(m.doOK))
 	m.buttons = append(m.buttons, tview.NewButton("Cancel").SetSelectedFunc(m.doCancel))
@@ -269,11 +269,11 @@ func (m *Dialog) FileBrowser(title string, path string, done func(rc DlgButton, 
 	// m.UIList.SetSelectedFunc(m.selectPath)
 
 	m.SetButtonsAlign(tview.AlignCenter)
-	m.SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor)
-	m.SetButtonTextColor(tview.Styles.PrimaryTextColor)
-	m.SetBackgroundColor(tview.Styles.ContrastBackgroundColor).SetBorderPadding(0, 0, 0, 0)
+	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
+	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
-		SetBackgroundColor(tview.Styles.ContrastBackgroundColor).
+		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
 		SetBorderPadding(1, 1, 1, 1)
 	m.buttons = append(m.buttons, tview.NewButton("OK").SetSelectedFunc(m.doOK))
 	m.buttons = append(m.buttons, tview.NewButton("Cancel").SetSelectedFunc(m.doCancel))
@@ -306,11 +306,11 @@ func (m *Dialog) DeleteFileBrowser(title string, path string, done func(rc DlgBu
 	// m.UIList.SetSelectedFunc(m.selectPath)
 
 	m.SetButtonsAlign(tview.AlignCenter)
-	m.SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor)
-	m.SetButtonTextColor(tview.Styles.PrimaryTextColor)
-	m.SetBackgroundColor(tview.Styles.ContrastBackgroundColor).SetBorderPadding(0, 0, 0, 0)
+	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
+	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
-		SetBackgroundColor(tview.Styles.ContrastBackgroundColor).
+		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
 		SetBorderPadding(1, 1, 1, 1)
 	m.buttons = append(m.buttons, tview.NewButton("Delete").SetSelectedFunc(m.doDelete))
 	m.buttons = append(m.buttons, tview.NewButton("Cancel").SetSelectedFunc(m.doCancel))
@@ -501,7 +501,7 @@ func (m *Dialog) setUI() {
 		if m.width < (len(m.Path) + 15) {
 			m.width = len(m.Path) + 15
 		}
-		m.width += 2
+		m.width += 10
 		m.height = 9
 		if m.dtype == INPUT_TEXT || m.dtype == INPUT_LIST {
 			m.height += 2

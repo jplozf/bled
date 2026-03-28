@@ -8,9 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/pgavlin/femto"
-	"github.com/rivo/tview"
 )
 
 // ****************************************************************************
@@ -120,6 +118,25 @@ func newFile() {
 // ****************************************************************************
 // saveFile()
 // ****************************************************************************
+func closeFile(index int) {
+	if index < 0 || index >= len(efiles) {
+		return
+	}
+
+	// Remove the file from the list
+	efiles = append(efiles[:index], efiles[index+1:]...)
+
+	// If there are still files open, switch to the first one
+	if len(efiles) > 0 {
+		switchDocument(0)
+	} else {
+		newFile()
+	}
+}
+
+// ****************************************************************************
+// saveFile()
+// ****************************************************************************
 func saveFile() {
 	if CurrentFile.ReadOnly {
 		SetStatus("[red]Error: Cannot save a read-only file[-]")
@@ -139,42 +156,6 @@ func saveFile() {
 
 	CurrentFile.FemtoBuffer.IsModified = false // Set the buffer as not modified after saving
 	SetStatus(fmt.Sprintf("File saved : %s", filepath.Base(CurrentFile.FName)))
-}
-
-// ****************************************************************************
-// showSaveAsDialog()
-// ****************************************************************************
-func showSaveAsDialog() {
-	inputField := tview.NewInputField().
-		SetLabel("Save as : ").
-		SetFieldWidth(30)
-
-	inputField.SetDoneFunc(func(key tcell.Key) {
-		switch key {
-		case tcell.KeyEnter:
-			path := inputField.GetText()
-			if path != "" {
-				CurrentFile.FName = path
-				saveFile()
-				pages.RemovePage("saveAs")
-				app.SetFocus(editor)
-			}
-		case tcell.KeyEsc:
-			pages.RemovePage("saveAs")
-			app.SetFocus(editor)
-		}
-	})
-
-	// Center the input field in a modal
-	modal := tview.NewFlex().
-		AddItem(nil, 0, 1, false).
-		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-			AddItem(nil, 0, 1, false).
-			AddItem(inputField, 3, 1, true).
-			AddItem(nil, 0, 1, false), 40, 1, true).
-		AddItem(nil, 0, 1, false)
-
-	pages.AddPage("saveAs", modal, true, true)
 }
 
 // ****************************************************************************
@@ -254,4 +235,50 @@ func prevFile() {
 	// Calculate the previous index (with wrap-around)
 	prevIdx := (idx - 1 + len(efiles)) % len(efiles)
 	switchDocument(prevIdx)
+}
+
+// ****************************************************************************
+// GoBottom()
+// ****************************************************************************
+func GoBottom() {
+	var loc femto.Loc
+	loc.X = 0
+	loc.Y = CurrentFile.FemtoBuffer.End().Y
+	CurrentFile.FemtoBuffer.Cursor.GotoLoc(loc)
+	editor.OpenBuffer(CurrentFile.FemtoBuffer)
+	SetStatus("Go to bottom")
+}
+
+// ****************************************************************************
+// GoTop()
+// ****************************************************************************
+func GoTop() {
+	var loc femto.Loc
+	loc.X = 0
+	loc.Y = 0
+	CurrentFile.FemtoBuffer.Cursor.GotoLoc(loc)
+	editor.OpenBuffer(CurrentFile.FemtoBuffer)
+	SetStatus("Go to top")
+}
+
+// ****************************************************************************
+// GoLine()
+// ****************************************************************************
+func GoLine(l int) {
+	if l < 1 {
+		SetStatus("Jump outside bounds")
+		GoTop()
+	} else {
+		if l <= CurrentFile.FemtoBuffer.LinesNum() {
+			var loc femto.Loc
+			loc.X = 0
+			loc.Y = l - 1
+			CurrentFile.FemtoBuffer.Cursor.GotoLoc(loc)
+			editor.OpenBuffer(CurrentFile.FemtoBuffer)
+			SetStatus(fmt.Sprintf("Go to line #%d", l))
+		} else {
+			SetStatus("Jump too far")
+			GoBottom()
+		}
+	}
 }

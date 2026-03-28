@@ -17,7 +17,10 @@ package main
 import (
 	"bled/conf"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strconv"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -27,12 +30,15 @@ import (
 // VARS
 // ****************************************************************************
 var (
-	app          *tview.Application
-	menuBar      *AppMenuBar
-	pages        *tview.Pages
-	status       *tview.TextView
-	messageQueue = make(chan string, 100) // queue for status messages, with a buffer of 100 messages
-	DlgQuit      *Dialog
+	app              *tview.Application
+	menuBar          *AppMenuBar
+	pages            *tview.Pages
+	status           *tview.TextView
+	messageQueue     = make(chan string, 100) // queue for status messages, with a buffer of 100 messages
+	DlgQuit          *Dialog
+	DlgInputFileOpen *Dialog
+	DlgSaveFileAs    *Dialog
+	DlgInputGotoLine *Dialog
 )
 
 // MAJOR Version number, injected at build time
@@ -102,7 +108,12 @@ func main() {
 	if len(os.Args) > 1 {
 		// Open file(s) if provided as command-line argument(s)
 		for _, arg := range os.Args[1:] {
-			openFile(arg, false)
+			absPath, err := filepath.Abs(arg)
+			if err != nil {
+				SetStatus("Error resolving path: " + err.Error())
+				continue
+			}
+			openFile(absPath, false)
 		}
 	} else {
 		// Open a new file if no filename is provided
@@ -168,4 +179,141 @@ func openSettings() {
 	openFile(path, false)
 	SetStatus("Configuration loaded : " + path)
 	app.SetFocus(editor)
+}
+
+// ****************************************************************************
+// InputFileOpen()
+// ****************************************************************************
+func InputFileOpen() {
+	path, err := os.Getwd()
+	if err != nil {
+		SetStatus("Error getting current working directory : " + err.Error())
+		return
+	}
+	DlgInputFileOpen = DlgInputFileOpen.FileBrowser("Open File", // Title
+		path,
+		doOpenFile,
+		0,
+		"main", editor, false)
+	pages.AddPage("dlgInputFileOpen", DlgInputFileOpen.Popup(), true, false)
+	pages.ShowPage("dlgInputFileOpen")
+	app.SetFocus(DlgInputFileOpen)
+}
+
+// ****************************************************************************
+// doOpenFile()
+// ****************************************************************************
+func doOpenFile(rc DlgButton, idx int) {
+	if rc == BUTTON_OK {
+		fn := DlgInputFileOpen.Value
+		SetStatus("Opening " + fn)
+		openFile(fn, false)
+	}
+}
+
+// ****************************************************************************
+// SaveFileAs()
+// ****************************************************************************
+func SaveFileAs() {
+	SetStatus("Save as...")
+	DlgSaveFileAs = DlgSaveFileAs.Input("Save File as...", // Title
+		"New name for this file :", // Message
+		CurrentFile.FName,
+		confirmSaveAs,
+		0,
+		"main", editor) // Focus return
+	pages.AddPage("dlgSaveFileAs", DlgSaveFileAs.Popup(), true, false)
+	pages.ShowPage("dlgSaveFileAs")
+}
+
+// ****************************************************************************
+// confirmSaveAs()
+// ****************************************************************************
+func confirmSaveAs(rc DlgButton, idx int) {
+	if rc == BUTTON_OK {
+		newName := DlgSaveFileAs.Value
+		err := ioutil.WriteFile(newName, []byte(CurrentFile.FemtoBuffer.String()), 0600)
+		if err == nil {
+			CurrentFile.FName = newName
+			SetStatus(fmt.Sprintf("File %s successfully saved", CurrentFile.FName))
+			CurrentFile.FemtoBuffer.IsModified = false
+			refreshFileMenu()
+		} else {
+			SetStatus(err.Error())
+		}
+	}
+}
+
+// ****************************************************************************
+// InputGotoLine()
+// ****************************************************************************
+func InputGotoLine() {
+	SetStatus("Goto line...")
+	DlgInputGotoLine = DlgInputGotoLine.Input("Goto Line...", // Title
+		"Go to line :",                       // Message
+		fmt.Sprintf("%d", editor.Cursor.Y+1), // Pre-fill with current line number (1-based)
+		confirmGotoLine,
+		0,
+		"main", editor) // Focus return
+	pages.AddPage("dlgInputGotoLine", DlgInputGotoLine.Popup(), true, false)
+	pages.ShowPage("dlgInputGotoLine")
+}
+
+// ****************************************************************************
+// confirmGotoLine()
+// ****************************************************************************
+func confirmGotoLine(rc DlgButton, idx int) {
+	if rc == BUTTON_OK {
+		line := DlgInputGotoLine.Value
+		lineNum, err := strconv.Atoi(line)
+		if err != nil {
+			SetStatus("Error: invalid line number")
+			return
+		}
+		GoLine(lineNum)
+	}
+}
+
+// ****************************************************************************
+// ShowManual()
+// ****************************************************************************
+func ShowManual() {
+	msg := "F1     : Show this manual\nF6     : Previous file\nF7     : Next file\nF10    : Focus/Unfocus menu bar\nCtrl+N : New file\nCtrl+O : Open file\nCtrl+S : Save file\nCtrl+T : Close file\nCtrl+G : Goto line\nCtrl+Q : Quit"
+	MsgBox = MsgBox.OK("Manual", msg, nil, 0, "main", editor)
+	pages.AddPage("msgManual", MsgBox.Popup(), true, false)
+	pages.ShowPage("msgManual")
+}
+
+// ****************************************************************************
+// closeCurrentFile()
+// ****************************************************************************
+func closeCurrentFile() {
+	if CurrentFile == nil {
+		SetStatus("[red]Error : No file to close[-]")
+		return
+	}
+	targetIdx := -1
+	for i, f := range efiles {
+		if f == CurrentFile {
+			targetIdx = i
+			break
+		}
+	}
+	if CurrentFile.FemtoBuffer != nil && CurrentFile.FemtoBuffer.Modified() {
+		DlgQuit = DlgQuit.YesNo("Close File", // Title
+			fmt.Sprintf("File %s has unsaved changes.\nDo you want to close without saving ?", CurrentFile.FName), // Message
+			func(rc DlgButton, idx int) {
+				if rc == BUTTON_YES {
+					closeFile(targetIdx)
+				} else {
+					SetStatus("Canceling close")
+				}
+			},
+			0,
+			"main", editor)
+		pages.AddPage("dlgCloseFile", DlgQuit.Popup(), true, false)
+		pages.ShowPage("dlgCloseFile")
+	} else {
+		closeFile(targetIdx)
+	}
 }
