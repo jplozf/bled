@@ -88,7 +88,7 @@ func setUI() {
 
 	helpEntries = []MenuEntry{
 		{Label: "Manual", Action: func() { ShowManual() }, Shortcut: tcell.KeyF1},
-		{Label: "About", Action: func() { /*...*/ }},
+		{Label: "About", Action: func() { ShowWelcomePopup() }},
 		{Label: "Settings", Action: func() { openSettings() }},
 	}
 	menuBar.AddMenu(" Help ", helpEntries)

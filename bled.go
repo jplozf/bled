@@ -61,6 +61,13 @@ func main() {
 			return nil
 		}
 
+		// ALT+S
+		evkSaveAs := tcell.NewEventKey(tcell.KeyRune, 's', tcell.ModAlt)
+		if event.Key() == evkSaveAs.Key() && event.Rune() == evkSaveAs.Rune() && event.Modifiers() == evkSaveAs.Modifiers() {
+			SaveFileAs()
+			return nil
+		}
+
 		switch event.Key() {
 		case tcell.KeyF10:
 			if menuBar.HasFocus() {
@@ -279,8 +286,7 @@ func confirmGotoLine(rc DlgButton, idx int) {
 // ShowManual()
 // ****************************************************************************
 func ShowManual() {
-	msg := "F1     : Show this manual\nF6     : Previous file\nF7     : Next file\nF10    : Focus/Unfocus menu bar\nCtrl+N : New file\nCtrl+O : Open file\nCtrl+S : Save file\nCtrl+T : Close file\nCtrl+G : Goto line\nCtrl+Q : Quit"
-	MsgBox = MsgBox.OK("Manual", msg, nil, 0, "main", editor)
+	MsgBox = MsgBox.OK(" Manual ", Help, nil, 0, "main", editor)
 	pages.AddPage("msgManual", MsgBox.Popup(), true, false)
 	pages.ShowPage("msgManual")
 }
@@ -318,3 +324,55 @@ func closeCurrentFile() {
 		closeFile(targetIdx)
 	}
 }
+
+var Help = `⚶ [yellow]B L E D   -   Copyright © JPL 2026
+
+[white]Bled is a TUI (Text User Interface) Editor.
+Bled is written in Go and has been tested on Linux sytem.
+Built from source, it should run on Windows or MacOS systems as well.
+
+Pay honour to whom honour is due, packages used in this project are as follows :
+[red]rivo/tview    :[white] Package tview implements rich widgets for terminal based user interfaces.
+[red]gdamore/tcell :[white] Tcell is an alternate terminal package, similar in some ways to termbox, but better in others. 
+[red]pgavlin/femto :[white] An editor component for tview. Derived from the micro editor. 
+
+⯈ The main functions are reachable through function keys :
+
+[red]F1  :[white] This help screen
+[red]F6  :[white] Switch to the previous open file
+[red]F7  :[white] Switch to the next open file
+[red]F10 :[white] Access to the main menu of Bled
+
+⯈ Alternate common functions are also reachable through CTRL and ALT keys :
+
+[red]CTRL + F :[white] Switch to the Find & Replace panel, or go back to the Editor panel
+[red]CTRL + S :[white] Saves the current document being edited
+[red]ALT  + S :[white] Saves the current document being edited under another name
+[red]CTRL + N :[white] Opens a new blank document
+[red]CTRL + O :[white] Opens an existing document for editing
+[red]CTRL + T :[white] Closes the current document
+[red]CTRL + G :[white] Opens the "Goto line" dialog to jump to a specific line number
+[red]CTRL + Q :[white] Quit Bled
+
+⯈ When editing a text, common editing functions are of course supported :
+
+[red]CTRL + C :[white] Copy the selection
+[red]CTRL + X :[white] Cut the selection
+[red]CTRL + V :[white] Paste the selection
+[red]CTRL + Z :[white] Cancels the previous entry 
+[red]CTRL + Y :[white] Redo the previous cancelled operation
+
+`
+
+// ----------------------------------------------------------------------------
+//    Some common useful icons
+// ----------------------------------------------------------------------------
+//   ⚶
+//   ●
+//   ⯈
+//   ⎇
+//   ⟟
+//   🗨
+//   ⚠
+//   ©
+// ----------------------------------------------------------------------------

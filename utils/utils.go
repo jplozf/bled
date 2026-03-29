@@ -28,6 +28,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -790,6 +791,8 @@ func PrintCompactNumber(input string) {
 	}
 }
 
+var colorTagRegex = regexp.MustCompile(`\[([a-zA-Z0-9#,:-]+|-)\]`)
+
 // ****************************************************************************
 // GetMaxLineLength()
 // ****************************************************************************
@@ -802,8 +805,14 @@ func GetMaxLineLength(input string) int {
 
 	maxLen := 0
 	for _, line := range lines {
+		// 1. Enlever le retour chariot éventuel
 		cleanLine := strings.TrimRight(line, "\r")
-		currentLen := utf8.RuneCountInString(cleanLine)
+
+		// 2. Supprimer visuellement les tags de couleur [red], [#ff0000], [-], etc.
+		strippedLine := colorTagRegex.ReplaceAllString(cleanLine, "")
+
+		// 3. Compter les vrais caractères restants
+		currentLen := utf8.RuneCountInString(strippedLine)
 
 		if currentLen > maxLen {
 			maxLen = currentLen
