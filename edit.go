@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pgavlin/femto"
 )
@@ -58,9 +59,13 @@ func openFile(filename string, readOnly bool) {
 	newBuf.Settings["scrollbar"] = true
 	newBuf.Settings["statusline"] = false
 
+	var newView *femto.View
+	newView = femto.NewView(newBuf)
+
 	newEFile := &efile{
 		FemtoBuffer: newBuf,
 		FName:       filename,
+		FemtoView:   newView,
 		Encoding:    "UTF-8",
 		Modified:    false,
 		ReadOnly:    readOnly,
@@ -102,9 +107,11 @@ func newFile() {
 	newBuf.Settings["softwrap"] = true
 	newBuf.Settings["scrollbar"] = true
 	newBuf.Settings["statusline"] = false
-
+	var newView *femto.View
+	newView = femto.NewView(newBuf)
 	newEFile := &efile{
 		FemtoBuffer: newBuf,
+		FemtoView:   newView,
 		FName:       tempName,
 		Encoding:    "UTF-8",
 		Modified:    false,
@@ -281,4 +288,121 @@ func GoLine(l int) {
 			GoBottom()
 		}
 	}
+}
+
+// ****************************************************************************
+// performSearch()
+// ****************************************************************************
+func performSearch(query string) int {
+	if query == "" || CurrentFile == nil {
+		return 0
+	}
+
+	buf := CurrentFile.FemtoBuffer
+	view := CurrentFile.FemtoView
+	count := 0
+	var foundLoc *femto.Loc
+
+	searchQuery := strings.ToLower(query)
+
+	for i := 0; i < buf.NumLines; i++ {
+		line := strings.ToLower(string(buf.Line(i)))
+		line = strings.TrimRight(line, "\r\n") // Remove trailing newline characters for accurate searching
+
+		if strings.Contains(line, searchQuery) {
+			occurences := strings.Count(line, searchQuery)
+
+			if count == 0 {
+				idx := strings.Index(line, searchQuery)
+				foundLoc = &femto.Loc{X: idx, Y: i}
+			}
+			count += occurences
+		}
+	}
+
+	if foundLoc != nil && view != nil {
+		view.Cursor.Loc = *foundLoc
+		editor.OpenBuffer(buf) // Refresh the view to show the new cursor position
+		view.Center()
+	}
+
+	return count
+}
+
+// ****************************************************************************
+// jumpToNextMatch()
+// ****************************************************************************
+func jumpToNextMatch() {
+	if lastSearchQuery == "" {
+		SetStatus("[yellow]No current search query[-]")
+		return
+	}
+
+	if CurrentFile == nil || CurrentFile.FemtoView == nil {
+		SetStatus("[red]Error : No file open or view not initialized[-]")
+		return
+	}
+
+	view := CurrentFile.FemtoView
+
+	if view.Cursor == nil {
+		SetStatus("[red]Error : Cursor not initialized[-]")
+		return
+	}
+
+	currentX := view.Cursor.X
+	currentY := view.Cursor.Y
+
+	next := findNextLoc(lastSearchQuery, currentX+1, currentY)
+	currentMatchIdx++
+	if currentMatchIdx > totalMatches {
+		currentMatchIdx = 1
+	}
+	searchPanel.label.SetText(fmt.Sprintf(" [black]Match %d of %d", currentMatchIdx, totalMatches))
+	if next == nil {
+		next = findNextLoc(lastSearchQuery, 0, 0)
+	}
+
+	if next != nil {
+		view.Cursor.X = next.X
+		view.Cursor.Y = next.Y
+		view.Center()
+		var loc femto.Loc
+		loc.X = next.X
+		loc.Y = next.Y
+		CurrentFile.FemtoBuffer.Cursor.GotoLoc(loc)
+		editor.OpenBuffer(CurrentFile.FemtoBuffer)
+	}
+}
+
+// ****************************************************************************
+// findNextLoc()
+// ****************************************************************************
+func findNextLoc(query string, startX, startY int) *femto.Loc {
+	if CurrentFile == nil || CurrentFile.FemtoBuffer == nil {
+		return nil
+	}
+
+	buf := CurrentFile.FemtoBuffer
+	query = strings.ToLower(query)
+
+	if startY < buf.NumLines {
+		line := strings.ToLower(string(buf.Line(startY)))
+		if startX < len(line) {
+			idx := strings.Index(line[startX:], query)
+			if idx != -1 {
+				return &femto.Loc{X: startX + idx, Y: startY}
+			}
+		}
+	}
+
+	for y := startY + 1; y < buf.NumLines; y++ {
+		line := strings.ToLower(string(buf.Line(y)))
+		idx := strings.Index(line, query)
+		if idx != -1 {
+			return &femto.Loc{X: idx, Y: y}
+		}
+	}
+
+	return nil // No match found
 }

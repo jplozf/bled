@@ -38,7 +38,34 @@ var (
 	config                                                               conf.Config
 	MsgBox                                                               *Dialog
 	statusFilePos, statusSize, statusModified, statusTime, statusMessage *tview.TextView
+	layout                                                               *tview.Flex
+	searchPanel                                                          *SearchPanel
 )
+
+type SearchPanel struct {
+	*tview.Flex
+	input  *tview.InputField
+	label  *tview.TextView
+	active bool
+}
+
+// ****************************************************************************
+// NewSearchPanel()
+// ****************************************************************************
+func NewSearchPanel() *SearchPanel {
+	s := &SearchPanel{
+		Flex:  tview.NewFlex().SetDirection(tview.FlexColumn),
+		input: tview.NewInputField().SetLabel(" Find: ").SetFieldWidth(30),
+		label: tview.NewTextView().SetDynamicColors(true),
+	}
+
+	// Style du panneau
+	s.input.SetFieldBackgroundColor(tcell.ColorBlack).SetLabelColor(tcell.ColorBlack).SetFieldTextColor(tcell.ColorYellow)
+	s.Flex.AddItem(s.input, 0, 1, true).
+		AddItem(s.label, 20, 0, false)
+
+	return s
+}
 
 // ****************************************************************************
 // setUI()
@@ -77,11 +104,14 @@ func setUI() {
 		{Label: "Quit", Shortcut: tcell.KeyCtrlQ, Action: func() { safeQuit() }},
 	}
 	menuBar.AddMenu(" File ", fileMenu)
-	//refreshFileMenu()
 
 	editEntries = []MenuEntry{
 		{Label: "Goto", Action: func() { InputGotoLine() }, Shortcut: tcell.KeyCtrlG},
-		{Label: "Find", Action: func() { /*...*/ }},
+		{Label: "Find", Action: func() {
+			layout.ResizeItem(searchPanel, 1, 0)
+			app.SetFocus(searchPanel.input)
+			searchPanel.active = true
+		}, Shortcut: tcell.KeyCtrlF},
 		{Label: "Replace", Action: func() { /*...*/ }},
 	}
 	menuBar.AddMenu(" Edit ", editEntries)
@@ -92,7 +122,6 @@ func setUI() {
 		{Label: "Settings", Action: func() { openSettings() }},
 	}
 	menuBar.AddMenu(" Help ", helpEntries)
-	// fmt.Printf("Boutons enregistrés : %d\n", len(menuBar.buttons))
 
 	// STATUS BAR COMPONENTS
 	statusFilePos = tview.NewTextView().SetDynamicColors(true)
@@ -101,7 +130,7 @@ func setUI() {
 	statusModified = tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
 	statusTime = tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignRight)
 
-	// Assemblage dans un Flex horizontal
+	// Horizontal layout for the status bar
 	statusBar := tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(statusFilePos, 0, 1, false).
 		AddItem(statusMessage, 0, 1, false).
@@ -109,10 +138,37 @@ func setUI() {
 		AddItem(statusModified, 10, 0, false).
 		AddItem(statusTime, 10, 0, false)
 
+	searchPanel = NewSearchPanel()
+	searchPanel.input.SetChangedFunc(func(text string) {
+		if text == "" {
+			searchPanel.label.SetText("")
+			return
+		}
+		totalMatches = performSearch(text)
+		searchPanel.label.SetText(fmt.Sprintf(" [black]%d occurence(s)[-]", totalMatches))
+	})
+	searchPanel.input.SetDoneFunc(func(key tcell.Key) {
+		switch key {
+		case tcell.KeyEnter:
+			query := searchPanel.input.GetText()
+			if query != "" {
+				lastSearchQuery = query
+				// searchPanel.active = false
+				app.SetFocus(editor)
+				jumpToNextMatch()
+			}
+		case tcell.KeyEsc:
+			layout.ResizeItem(searchPanel, 0, 0)
+			searchPanel.active = false
+			app.SetFocus(editor)
+		}
+	})
+
 	// --- LAYOUT ---
-	layout := tview.NewFlex().SetDirection(tview.FlexRow).
+	layout = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(menuBar, 1, 0, false).
 		AddItem(editor, 0, 1, true).
+		AddItem(searchPanel, 0, 0, false).
 		AddItem(statusBar, 1, 0, false)
 
 	pages.AddPage("main", layout, true, true)

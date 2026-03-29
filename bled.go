@@ -39,6 +39,9 @@ var (
 	DlgInputFileOpen *Dialog
 	DlgSaveFileAs    *Dialog
 	DlgInputGotoLine *Dialog
+	lastSearchQuery  string
+	totalMatches     int
+	currentMatchIdx  int
 )
 
 // MAJOR Version number, injected at build time
@@ -69,6 +72,26 @@ func main() {
 		}
 
 		switch event.Key() {
+		case tcell.KeyCtrlF:
+			layout.ResizeItem(searchPanel, 1, 0)
+			app.SetFocus(searchPanel.input)
+			searchPanel.active = true
+			return nil
+
+		case tcell.KeyF4:
+			if CurrentFile != nil {
+				jumpToNextMatch()
+			}
+			return nil
+
+		case tcell.KeyEsc:
+			if searchPanel.active {
+				layout.ResizeItem(searchPanel, 0, 0)
+				app.SetFocus(editor)
+				searchPanel.active = false
+				return nil
+			}
+
 		case tcell.KeyF10:
 			if menuBar.HasFocus() {
 				menuBar.closeAllMenus()
@@ -84,6 +107,8 @@ func main() {
 		case tcell.KeyF7:
 			nextFile()
 			return nil
+		default:
+			return event
 		}
 		return event
 	})
@@ -339,13 +364,14 @@ Pay honour to whom honour is due, packages used in this project are as follows :
 ⯈ The main functions are reachable through function keys :
 
 [red]F1  :[white] This help screen
+[red]F4  :[white] Jump to the next match of the current search query
 [red]F6  :[white] Switch to the previous open file
 [red]F7  :[white] Switch to the next open file
 [red]F10 :[white] Access to the main menu of Bled
 
 ⯈ Alternate common functions are also reachable through CTRL and ALT keys :
 
-[red]CTRL + F :[white] Switch to the Find & Replace panel, or go back to the Editor panel
+[red]CTRL + F :[white] Switch to the Find & Replace panel
 [red]CTRL + S :[white] Saves the current document being edited
 [red]ALT  + S :[white] Saves the current document being edited under another name
 [red]CTRL + N :[white] Opens a new blank document
