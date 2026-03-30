@@ -23,6 +23,7 @@ import (
 	"strconv"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/pgavlin/femto"
 	"github.com/rivo/tview"
 )
 
@@ -72,12 +73,6 @@ func main() {
 		}
 
 		switch event.Key() {
-		case tcell.KeyCtrlF:
-			layout.ResizeItem(searchPanel, 1, 0)
-			app.SetFocus(searchPanel.input)
-			searchPanel.active = true
-			return nil
-
 		case tcell.KeyF4:
 			if CurrentFile != nil {
 				jumpToNextMatch()
@@ -311,9 +306,19 @@ func confirmGotoLine(rc DlgButton, idx int) {
 // ShowManual()
 // ****************************************************************************
 func ShowManual() {
-	MsgBox = MsgBox.OK(" Manual ", Help, nil, 0, "main", editor)
-	pages.AddPage("msgManual", MsgBox.Popup(), true, false)
-	pages.ShowPage("msgManual")
+	helpBuf := femto.NewBufferFromString(helpText, "Help.txt")
+
+	helpFile := &efile{
+		FName:       "Bled Manual",
+		FemtoBuffer: helpBuf,
+		FemtoView:   femto.NewView(helpBuf),
+		ReadOnly:    true,
+	}
+
+	efiles = append(efiles, helpFile)
+	switchDocument(len(efiles) - 1)
+
+	SetStatus("Opening help manual...")
 }
 
 // ****************************************************************************
@@ -350,43 +355,44 @@ func closeCurrentFile() {
 	}
 }
 
-var Help = `⚶ [yellow]B L E D   -   Copyright © JPL 2026
+var helpText = `⚶ B L E D   -   Copyright © JPL 2026
 
-[white]Bled is a TUI (Text User Interface) Editor.
+Bled is a TUI (Text User Interface) Editor.
 Bled is written in Go and has been tested on Linux sytem.
 Built from source, it should run on Windows or MacOS systems as well.
+Several files can be opened at the same time, and you can switch between them easily.
 
 Pay honour to whom honour is due, packages used in this project are as follows :
-[red]rivo/tview    :[white] Package tview implements rich widgets for terminal based user interfaces.
-[red]gdamore/tcell :[white] Tcell is an alternate terminal package, similar in some ways to termbox, but better in others. 
-[red]pgavlin/femto :[white] An editor component for tview. Derived from the micro editor. 
+rivo/tview    : Package tview implements rich widgets for terminal based user interfaces.
+gdamore/tcell : Tcell is an alternate terminal package, similar in some ways to termbox, but better in others. 
+pgavlin/femto : An editor component for tview. Derived from the micro editor. 
 
 ⯈ The main functions are reachable through function keys :
 
-[red]F1  :[white] This help screen
-[red]F4  :[white] Jump to the next match of the current search query
-[red]F6  :[white] Switch to the previous open file
-[red]F7  :[white] Switch to the next open file
-[red]F10 :[white] Access to the main menu of Bled
+F1  : This help text
+F4  : Jump to the next match of the current search query
+F6  : Switch to the previous open file
+F7  : Switch to the next open file
+F10 : Access to the main menu of Bled
 
 ⯈ Alternate common functions are also reachable through CTRL and ALT keys :
 
-[red]CTRL + F :[white] Switch to the Find & Replace panel
-[red]CTRL + S :[white] Saves the current document being edited
-[red]ALT  + S :[white] Saves the current document being edited under another name
-[red]CTRL + N :[white] Opens a new blank document
-[red]CTRL + O :[white] Opens an existing document for editing
-[red]CTRL + T :[white] Closes the current document
-[red]CTRL + G :[white] Opens the "Goto line" dialog to jump to a specific line number
-[red]CTRL + Q :[white] Quit Bled
+CTRL + F : Switch to the Find & Replace panel
+CTRL + S : Saves the current document being edited
+ALT  + S : Saves the current document being edited under another name
+CTRL + N : Opens a new blank document
+CTRL + O : Opens an existing document for editing
+CTRL + T : Closes the current document
+CTRL + G : Opens the "Goto line" dialog to jump to a specific line number
+CTRL + Q : Quit Bled
 
 ⯈ When editing a text, common editing functions are of course supported :
 
-[red]CTRL + C :[white] Copy the selection
-[red]CTRL + X :[white] Cut the selection
-[red]CTRL + V :[white] Paste the selection
-[red]CTRL + Z :[white] Cancels the previous entry 
-[red]CTRL + Y :[white] Redo the previous cancelled operation
+CTRL + C : Copy the selection
+CTRL + X : Cut the selection
+CTRL + V : Paste the selection
+CTRL + Z : Cancels the previous entry 
+CTRL + Y : Redo the previous cancelled operation
 
 `
 

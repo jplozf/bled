@@ -301,25 +301,21 @@ func performSearch(query string) int {
 	buf := CurrentFile.FemtoBuffer
 	view := CurrentFile.FemtoView
 	count := 0
-	var foundLoc *femto.Loc
 
-	searchQuery := strings.ToLower(query)
+	isSensitive := searchPanel.caseCheck.IsChecked()
 
 	for i := 0; i < buf.NumLines; i++ {
-		line := strings.ToLower(string(buf.Line(i)))
-		line = strings.TrimRight(line, "\r\n") // Remove trailing newline characters for accurate searching
+		line := string(buf.Line(i))
+		searchQuery := query
 
-		if strings.Contains(line, searchQuery) {
-			occurences := strings.Count(line, searchQuery)
-
-			if count == 0 {
-				idx := strings.Index(line, searchQuery)
-				foundLoc = &femto.Loc{X: idx, Y: i}
-			}
-			count += occurences
+		if !isSensitive {
+			line = strings.ToLower(line)
+			searchQuery = strings.ToLower(query)
 		}
+		count += strings.Count(line, searchQuery)
 	}
 
+	foundLoc := findNextLoc(query, 0, 0)
 	if foundLoc != nil && view != nil {
 		view.Cursor.Loc = *foundLoc
 		editor.OpenBuffer(buf) // Refresh the view to show the new cursor position
@@ -396,11 +392,27 @@ func findNextLoc(query string, startX, startY int) *femto.Loc {
 		}
 	}
 
-	for y := startY + 1; y < buf.NumLines; y++ {
-		line := strings.ToLower(string(buf.Line(y)))
-		idx := strings.Index(line, query)
-		if idx != -1 {
-			return &femto.Loc{X: idx, Y: y}
+	for y := startY; y < buf.NumLines; y++ {
+		isSensitive := searchPanel.caseCheck.IsChecked()
+		line := string(buf.Line(y))
+		target := query
+		currentLine := line
+
+		if !isSensitive {
+			currentLine = strings.ToLower(line)
+			target = strings.ToLower(query)
+		}
+
+		offset := 0
+		if y == startY {
+			offset = startX
+		}
+
+		if offset < len(currentLine) {
+			idx := strings.Index(currentLine[offset:], target)
+			if idx != -1 {
+				return &femto.Loc{X: offset + idx, Y: y}
+			}
 		}
 	}
 

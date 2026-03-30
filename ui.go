@@ -42,11 +42,15 @@ var (
 	searchPanel                                                          *SearchPanel
 )
 
+// ****************************************************************************
+// TYPES
+// ****************************************************************************
 type SearchPanel struct {
 	*tview.Flex
-	input  *tview.InputField
-	label  *tview.TextView
-	active bool
+	input     *tview.InputField
+	label     *tview.TextView
+	caseCheck *tview.Checkbox
+	active    bool
 }
 
 // ****************************************************************************
@@ -54,15 +58,42 @@ type SearchPanel struct {
 // ****************************************************************************
 func NewSearchPanel() *SearchPanel {
 	s := &SearchPanel{
-		Flex:  tview.NewFlex().SetDirection(tview.FlexColumn),
-		input: tview.NewInputField().SetLabel(" Find: ").SetFieldWidth(30),
-		label: tview.NewTextView().SetDynamicColors(true),
+		Flex:      tview.NewFlex().SetDirection(tview.FlexColumn),
+		input:     tview.NewInputField().SetLabel(" Find: ").SetFieldWidth(23),
+		label:     tview.NewTextView().SetDynamicColors(true),
+		caseCheck: tview.NewCheckbox().SetLabel(" Case sensitive : "),
 	}
+	// Colors for the search panel
+	s.caseCheck.SetFieldBackgroundColor(tcell.ColorBlack).SetLabelColor(tcell.ColorBlack).SetFieldTextColor(tcell.ColorYellow)
 
-	// Style du panneau
+	// Action on case sensitivity change
+	s.caseCheck.SetChangedFunc(func(checked bool) {
+		// Relaunch the search with the new case sensitivity setting
+		performSearch(s.input.GetText())
+	})
+
+	s.input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyTab {
+			app.SetFocus(s.caseCheck) // Switch to the checkbox
+			return nil
+		}
+		return event
+	})
+
+	s.caseCheck.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyTab {
+			app.SetFocus(s.input) // Switch back to the input
+			return nil
+		}
+		return event
+	})
+
+	// Panel's style
 	s.input.SetFieldBackgroundColor(tcell.ColorBlack).SetLabelColor(tcell.ColorBlack).SetFieldTextColor(tcell.ColorYellow)
-	s.Flex.AddItem(s.input, 0, 1, true).
-		AddItem(s.label, 20, 0, false)
+	s.Flex.
+		AddItem(s.input, 30, 0, true).
+		AddItem(s.caseCheck, 20, 0, false).
+		AddItem(s.label, 0, 1, false)
 
 	return s
 }
@@ -153,7 +184,6 @@ func setUI() {
 			query := searchPanel.input.GetText()
 			if query != "" {
 				lastSearchQuery = query
-				// searchPanel.active = false
 				app.SetFocus(editor)
 				jumpToNextMatch()
 			}
