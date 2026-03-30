@@ -306,6 +306,14 @@ func confirmGotoLine(rc DlgButton, idx int) {
 // ShowManual()
 // ****************************************************************************
 func ShowManual() {
+	for i, f := range efiles {
+		if f.FName == "Bled Manual" {
+			switchDocument(i)
+			SetStatus("Switching to help manual")
+			return
+		}
+	}
+
 	helpBuf := femto.NewBufferFromString(helpText, "Help.txt")
 
 	helpFile := &efile{
@@ -318,7 +326,7 @@ func ShowManual() {
 	efiles = append(efiles, helpFile)
 	switchDocument(len(efiles) - 1)
 
-	SetStatus("Opening help manual...")
+	SetStatus("Opening help manual")
 }
 
 // ****************************************************************************
@@ -393,6 +401,41 @@ CTRL + X : Cut the selection
 CTRL + V : Paste the selection
 CTRL + Z : Cancels the previous entry 
 CTRL + Y : Redo the previous cancelled operation
+
+⯈ Settings are stored in a configuration file, as a JSON file located in the user's home directory :
+
+menu_bg_color           : background color of the menu bar
+menu_selected_color     : background color of the selected menu item
+menu_text_color         : color of the text in the menu
+menu_disabled_color     : color of disabled menu items
+show_welcome_popup      : whether to show a welcome popup at startup
+confirm_on_quit         : whether to ask for confirmation when quitting with unsaved changes
+status_message_duration : duration in seconds for which status messages are displayed
+show_hidden_files       : whether to show hidden files in the file browser dialog
+color_accent            : accent color used in the UI (e.g. for highlights)
+theme                   : theme name (see below for available themes)
+
+⯈ Available themes are as follows (theme names are case-sensitive) :
+
+atom-dark-tc
+bubblegum
+cmc-16
+cmc-paper
+cmc-tc
+darcula
+default
+geany
+github-tc
+gruvbox-tc
+gruvbox
+material-tc
+monokai
+railscast
+simple
+solarized-tc
+solarized
+twilight
+zenburn
 
 `
 
