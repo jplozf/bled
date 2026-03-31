@@ -17,7 +17,9 @@ package main
 import (
 	"bled/conf"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -397,7 +399,7 @@ func getTabConfig() (isSoft bool, width int) {
 }
 
 // ****************************************************************************
-// smartDetab()
+// convertTabsToSpaces()
 // ****************************************************************************
 func convertTabsToSpaces(buf *femto.Buffer, width int) int {
 	count := 0
@@ -428,6 +430,40 @@ func smartDetab(line string, width int) string {
 		line = strings.Replace(line, "\t", spaces, 1)
 	}
 	return line
+}
+
+// ****************************************************************************
+// isTextFile()
+// ****************************************************************************
+func isTextFile(path string) (bool, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+
+	// Read a chunk of the file to analyze its content
+	buffer := make([]byte, 512)
+	n, err := f.Read(buffer)
+	if err != nil && err != io.EOF {
+		return false, err
+	}
+
+	// Mime type detection based on the content
+	contentType := http.DetectContentType(buffer[:n])
+
+	// if the content type starts with "text/" or is "application/octet-stream", we consider it as a text file
+	if strings.HasPrefix(contentType, "text/") || contentType == "application/octet-stream" {
+		// Look for null bytes in the content, which are common in binary files but rare in text files.
+		for i := 0; i < n; i++ {
+			if buffer[i] == 0 {
+				return false, nil // Null byte found, likely a binary file
+			}
+		}
+		return true, nil
+	}
+
+	return false, nil
 }
 
 var helpText = `⚶ B L E D   -   Copyright © JPL 2026

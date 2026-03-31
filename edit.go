@@ -45,20 +45,28 @@ func openFile(filename string, readOnly bool) {
 	}
 
 	var newBuf *femto.Buffer
+
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		SetStatus(fmt.Sprintf("Could not read %v", filename))
 		newBuf = femto.NewBufferFromString(string(""), filename)
 		SetStatus(fmt.Sprintf("Creating new file %v", filename))
 	} else {
-		newBuf = femto.NewBufferFromString(string(content), filename)
+		isText, _ := isTextFile(filename)
+		if !isText {
+			SetStatus("The file is not a valid text file")
+			filename = filename + ".txt"
+			newBuf = femto.NewBufferFromString(string(""), filename)
+		} else {
+			newBuf = femto.NewBufferFromString(string(content), filename)
+		}
 	}
 
 	// FORCE PEP8 : Convert tabs to spaces for Python files
 	if strings.HasSuffix(strings.ToLower(filename), ".py") {
 		modifiedLines := convertTabsToSpaces(newBuf, 4)
 		if modifiedLines > 0 {
-			SetStatus(fmt.Sprintf("[yellow]PEP8: %d lines converted to spaces[-]", modifiedLines))
+			SetStatus(fmt.Sprintf("PEP8: %d lines converted to spaces", modifiedLines))
 		}
 	}
 
