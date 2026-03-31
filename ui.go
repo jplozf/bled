@@ -38,6 +38,7 @@ var (
 	config                                                               conf.Config
 	MsgBox                                                               *Dialog
 	statusFilePos, statusSize, statusModified, statusTime, statusMessage *tview.TextView
+	statusTabs                                                           *tview.TextView
 	layout                                                               *tview.Flex
 	searchPanel                                                          *SearchPanel
 )
@@ -158,6 +159,7 @@ func setUI() {
 	statusFilePos = tview.NewTextView().SetDynamicColors(true)
 	statusMessage = tview.NewTextView().SetDynamicColors(true)
 	statusSize = tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
+	statusTabs = tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
 	statusModified = tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
 	statusTime = tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignRight)
 
@@ -166,6 +168,7 @@ func setUI() {
 		AddItem(statusFilePos, 0, 1, false).
 		AddItem(statusMessage, 0, 1, false).
 		AddItem(statusSize, 12, 0, false).
+		AddItem(statusTabs, 10, 0, false).
 		AddItem(statusModified, 10, 0, false).
 		AddItem(statusTime, 10, 0, false)
 
@@ -259,6 +262,13 @@ func refreshStatus() {
 		modifiedText = ""
 	}
 	statusModified.SetText(modifiedText)
+
+	isSoft, width := getTabConfig()
+	mode := "TAB"
+	if isSoft {
+		mode = "SPC"
+	}
+	statusTabs.SetText(fmt.Sprintf("%s:%d", mode, width))
 
 	statusTime.SetText(time.Now().Format("15:04:05 "))
 }

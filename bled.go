@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/pgavlin/femto"
@@ -123,6 +124,21 @@ func main() {
 				}
 				return nil
 			}
+		}
+
+		if event.Key() == tcell.KeyTab {
+			isSoft, width := getTabConfig()
+
+			if isSoft {
+				// SOFT TABS : insert spaces instead of a tab character
+				for range width {
+					CurrentFile.FemtoView.InsertSpace()
+				}
+				return nil
+			}
+
+			// HARD TABS : Insert a tab character
+			return event
 		}
 
 		switch event.Key() {
@@ -363,6 +379,57 @@ func closeCurrentFile() {
 	}
 }
 
+// ****************************************************************************
+// getTabConfig()
+// ****************************************************************************
+func getTabConfig() (isSoft bool, width int) {
+	if CurrentFile == nil {
+		return false, 8 // Par défaut standard
+	}
+
+	// Si c'est du Python, on impose les Soft Tabs (4 espaces)
+	if strings.HasSuffix(strings.ToLower(CurrentFile.FName), ".py") {
+		return true, 4
+	}
+
+	// Pour le Go ou les autres, on utilise souvent des Hard Tabs (largeur 8 ou 4)
+	return false, 4
+}
+
+// ****************************************************************************
+// smartDetab()
+// ****************************************************************************
+func convertTabsToSpaces(buf *femto.Buffer, width int) int {
+	count := 0
+	spaces := strings.Repeat(" ", width)
+
+	// On parcourt chaque ligne du buffer
+	for i := 0; i < buf.NumLines; i++ {
+		line := string(buf.Line(i))
+		if strings.Contains(line, "\t") {
+			// Remplacement de tous les \t par les espaces
+			newLine := strings.ReplaceAll(line, "\t", spaces)
+
+			// On remplace la ligne dans le buffer
+			// Note: On utilise souvent Replace() sur le buffer pour garder l'Undo
+			buf.Replace(femto.Loc{X: 0, Y: i}, femto.Loc{X: len(line), Y: i}, newLine)
+			count++
+		}
+	}
+	return count
+}
+
+// ****************************************************************************
+// smartDetab()
+// ****************************************************************************
+func smartDetab(line string, width int) string {
+	spaces := strings.Repeat(" ", width)
+	for strings.HasPrefix(line, "\t") {
+		line = strings.Replace(line, "\t", spaces, 1)
+	}
+	return line
+}
+
 var helpText = `⚶ B L E D   -   Copyright © JPL 2026
 
 Bled is a TUI (Text User Interface) Editor.
@@ -404,16 +471,16 @@ CTRL + Y : Redo the previous cancelled operation
 
 ⯈ Settings are stored in a configuration file, as a JSON file located in the user's home directory :
 
-menu_bg_color           : background color of the menu bar
-menu_selected_color     : background color of the selected menu item
-menu_text_color         : color of the text in the menu
-menu_disabled_color     : color of disabled menu items
-show_welcome_popup      : whether to show a welcome popup at startup
-confirm_on_quit         : whether to ask for confirmation when quitting with unsaved changes
-status_message_duration : duration in seconds for which status messages are displayed
-show_hidden_files       : whether to show hidden files in the file browser dialog
-color_accent            : accent color used in the UI (e.g. for highlights)
-theme                   : theme name (see below for available themes)
+menu_bg_color           : Background color of the menu bar
+menu_selected_color     : Background color of the selected menu item
+menu_text_color         : Color of the text in the menu
+menu_disabled_color     : Color of disabled menu items
+show_welcome_popup      : Whether to show a welcome popup at startup
+confirm_on_quit         : Whether to ask for confirmation when quitting with unsaved changes
+status_message_duration : Duration in seconds for which status messages are displayed
+show_hidden_files       : Whether to show hidden files in the file browser dialog
+color_accent            : Accent color used in the UI (e.g. for highlights)
+theme                   : Theme name (see below for available themes)
 
 ⯈ Available themes are as follows (theme names are case-sensitive) :
 

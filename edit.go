@@ -54,6 +54,14 @@ func openFile(filename string, readOnly bool) {
 		newBuf = femto.NewBufferFromString(string(content), filename)
 	}
 
+	// FORCE PEP8 : Convert tabs to spaces for Python files
+	if strings.HasSuffix(strings.ToLower(filename), ".py") {
+		modifiedLines := convertTabsToSpaces(newBuf, 4)
+		if modifiedLines > 0 {
+			SetStatus(fmt.Sprintf("[yellow]PEP8: %d lines converted to spaces[-]", modifiedLines))
+		}
+	}
+
 	newBuf.Settings["keepautoindent"] = true
 	newBuf.Settings["softwrap"] = true
 	newBuf.Settings["scrollbar"] = true
@@ -123,7 +131,7 @@ func newFile() {
 }
 
 // ****************************************************************************
-// saveFile()
+// closeFile()
 // ****************************************************************************
 func closeFile(index int) {
 	if index < 0 || index >= len(efiles) {
