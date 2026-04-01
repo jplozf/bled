@@ -22,7 +22,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -296,8 +295,8 @@ func confirmSaveAs(rc DlgButton, idx int) {
 func InputGotoLine() {
 	SetStatus("Goto line...")
 	DlgInputGotoLine = DlgInputGotoLine.Input("Goto Line...", // Title
-		"Go to line :",                       // Message
-		fmt.Sprintf("%d", editor.Cursor.Y+1), // Pre-fill with current line number (1-based)
+		"Go to line :", // Message
+		"",
 		confirmGotoLine,
 		0,
 		"main", editor) // Focus return
@@ -311,12 +310,7 @@ func InputGotoLine() {
 func confirmGotoLine(rc DlgButton, idx int) {
 	if rc == BUTTON_OK {
 		line := DlgInputGotoLine.Value
-		lineNum, err := strconv.Atoi(line)
-		if err != nil {
-			SetStatus("Error: invalid line number")
-			return
-		}
-		GoLine(lineNum)
+		gotoLocation(line)
 	}
 }
 

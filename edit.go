@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/pgavlin/femto"
@@ -261,49 +262,82 @@ func prevFile() {
 }
 
 // ****************************************************************************
-// GoBottom()
+// gotoLocation()
 // ****************************************************************************
-func GoBottom() {
-	var loc femto.Loc
-	loc.X = 0
-	loc.Y = CurrentFile.FemtoBuffer.End().Y
-	CurrentFile.FemtoBuffer.Cursor.GotoLoc(loc)
-	editor.OpenBuffer(CurrentFile.FemtoBuffer)
-	SetStatus("Go to bottom")
-}
-
-// ****************************************************************************
-// GoTop()
-// ****************************************************************************
-func GoTop() {
-	var loc femto.Loc
-	loc.X = 0
-	loc.Y = 0
-	CurrentFile.FemtoBuffer.Cursor.GotoLoc(loc)
-	editor.OpenBuffer(CurrentFile.FemtoBuffer)
-	SetStatus("Go to top")
-}
-
-// ****************************************************************************
-// GoLine()
-// ****************************************************************************
-func GoLine(l int) {
-	if l < 1 {
-		SetStatus("Jump outside bounds")
-		GoTop()
-	} else {
-		if l <= CurrentFile.FemtoBuffer.LinesNum() {
-			var loc femto.Loc
-			loc.X = 0
-			loc.Y = l - 1
-			CurrentFile.FemtoBuffer.Cursor.GotoLoc(loc)
-			editor.OpenBuffer(CurrentFile.FemtoBuffer)
-			SetStatus(fmt.Sprintf("Go to line #%d", l))
-		} else {
-			SetStatus("Jump too far")
-			GoBottom()
-		}
+func gotoLocation(input string) {
+	if CurrentFile == nil || CurrentFile.FemtoView == nil {
+		return
 	}
+
+	buf := CurrentFile.FemtoBuffer
+	view := CurrentFile.FemtoView
+	var targetLine int
+	totalLines := buf.NumLines
+
+	// Nettoyage de l'entrée (minuscules et sans espaces)
+	input = strings.ToLower(strings.TrimSpace(input))
+
+	switch {
+	case input == "top" || input == "start":
+		targetLine = 0
+
+	case input == "bottom" || input == "end":
+		targetLine = totalLines - 1
+
+	case strings.HasSuffix(input, "%"):
+		percentStr := strings.TrimSuffix(input, "%")
+		percent, err := strconv.Atoi(percentStr)
+		if err != nil || percent < 0 || percent > 100 {
+			SetStatus("Invalid percentage (ex: 50%)")
+			return
+		}
+		targetLine = (totalLines * percent) / 100
+
+	case strings.HasPrefix(input, "+"):
+		relativeStr := input[1:] // Remove the '+' sign
+		relative, err := strconv.Atoi(relativeStr)
+		if err != nil {
+			SetStatus("Relative line number invalid (ex: +10)")
+			return
+		}
+		targetLine = view.Cursor.Y + relative
+
+	case strings.HasPrefix(input, "-"):
+		relativeStr := input[1:] // Remove the '-' sign
+		relative, err := strconv.Atoi(relativeStr)
+		if err != nil {
+			SetStatus("Relative line number invalid (ex: -10)")
+			return
+		}
+		targetLine = view.Cursor.Y - relative
+
+	default:
+		line, err := strconv.Atoi(input)
+		if err != nil {
+			SetStatus("Unknown command (ex: top, 50, -10, 80%)")
+			return
+		}
+		targetLine = line - 1
+	}
+
+	if targetLine < 0 {
+		targetLine = 0
+	}
+	if targetLine >= totalLines {
+		targetLine = totalLines - 1
+	}
+	var loc femto.Loc
+	loc.X = 0
+	loc.Y = targetLine
+	CurrentFile.FemtoBuffer.Cursor.GotoLoc(loc)
+	editor.OpenBuffer(CurrentFile.FemtoBuffer)
+	/*
+		view.Cursor.X = 0
+		view.Cursor.Y = targetLine
+
+		view.Center()
+	*/
+	SetStatus(fmt.Sprintf("Go to line %d/%d", targetLine+1, totalLines))
 }
 
 // ****************************************************************************
