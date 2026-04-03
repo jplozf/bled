@@ -294,7 +294,7 @@ func confirmSaveAs(rc DlgButton, idx int) {
 // ****************************************************************************
 func InputGotoLine() {
 	SetStatus("Goto line...")
-	DlgInputGotoLine = DlgInputGotoLine.Input("Goto Line...", // Title
+	DlgInputGotoLine = DlgInputGotoLine.Input(" Goto Line ", // Title
 		"Go to line :", // Message
 		"",
 		confirmGotoLine,
@@ -346,7 +346,7 @@ func ShowManual() {
 // ****************************************************************************
 func closeCurrentFile() {
 	if CurrentFile == nil {
-		SetStatus("[red]Error : No file to close[-]")
+		SetStatus("Error : No file to close")
 		return
 	}
 	targetIdx := -1
@@ -458,6 +458,26 @@ func isTextFile(path string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func getScrollPercentage() int {
+	if CurrentFile == nil || CurrentFile.FemtoBuffer == nil {
+		return 0
+	}
+
+	totalLines := CurrentFile.FemtoBuffer.NumLines
+	// Si le fichier est vide ou n'a qu'une ligne
+	if totalLines <= 1 {
+		return 100
+	}
+
+	currentLine := CurrentFile.FemtoView.Cursor.Y
+
+	// Calcul : (Ligne actuelle / (Total - 1)) * 100
+	// On utilise Total-1 pour que la dernière ligne affiche bien 100%
+	percent := (currentLine * 100) / (totalLines - 1)
+
+	return percent
 }
 
 var helpText = `⚶ B L E D   -   Copyright © JPL 2026

@@ -48,10 +48,11 @@ var (
 // ****************************************************************************
 type SearchPanel struct {
 	*tview.Flex
-	input     *tview.InputField
-	label     *tview.TextView
-	caseCheck *tview.Checkbox
-	active    bool
+	searchInput  *tview.InputField
+	replaceInput *tview.InputField
+	label        *tview.TextView
+	caseCheck    *tview.Checkbox
+	active       bool
 }
 
 // ****************************************************************************
@@ -59,21 +60,21 @@ type SearchPanel struct {
 // ****************************************************************************
 func NewSearchPanel() *SearchPanel {
 	s := &SearchPanel{
-		Flex:      tview.NewFlex().SetDirection(tview.FlexColumn),
-		input:     tview.NewInputField().SetLabel(" Find: ").SetFieldWidth(23),
-		label:     tview.NewTextView().SetDynamicColors(true),
-		caseCheck: tview.NewCheckbox().SetLabel(" Case sensitive : "),
+		Flex:        tview.NewFlex().SetDirection(tview.FlexColumn),
+		searchInput: tview.NewInputField().SetLabel(" Find: ").SetFieldWidth(25),
+		label:       tview.NewTextView().SetDynamicColors(true),
+		caseCheck:   tview.NewCheckbox().SetLabel(" Case sensitive : "),
 	}
 	// Colors for the search panel
-	s.caseCheck.SetFieldBackgroundColor(tcell.ColorBlack).SetLabelColor(tcell.ColorBlack).SetFieldTextColor(tcell.ColorYellow)
+	s.caseCheck.SetFieldBackgroundColor(conf.GetColor(config.MenuTextColor)).SetLabelColor(conf.GetColor(config.MenuTextColor)).SetFieldTextColor(conf.GetColor(config.MenuSelectedColor))
 
 	// Action on case sensitivity change
 	s.caseCheck.SetChangedFunc(func(checked bool) {
 		// Relaunch the search with the new case sensitivity setting
-		performSearch(s.input.GetText())
+		performSearch(s.searchInput.GetText())
 	})
 
-	s.input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	s.searchInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
 			app.SetFocus(s.caseCheck) // Switch to the checkbox
 			return nil
@@ -83,18 +84,18 @@ func NewSearchPanel() *SearchPanel {
 
 	s.caseCheck.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
-			app.SetFocus(s.input) // Switch back to the input
+			app.SetFocus(s.searchInput) // Switch back to the input
 			return nil
 		}
 		return event
 	})
 
 	// Panel's style
-	s.input.SetFieldBackgroundColor(tcell.ColorBlack).SetLabelColor(tcell.ColorBlack).SetFieldTextColor(tcell.ColorYellow)
+	s.searchInput.SetFieldBackgroundColor(tcell.ColorBlack).SetLabelColor(tcell.ColorBlack).SetFieldTextColor(tcell.ColorYellow)
 	s.Flex.
-		AddItem(s.input, 30, 0, true).
+		AddItem(s.searchInput, 0, 1, true).
 		AddItem(s.caseCheck, 20, 0, false).
-		AddItem(s.label, 0, 1, false)
+		AddItem(s.label, 20, 0, false)
 
 	return s
 }
@@ -141,7 +142,7 @@ func setUI() {
 		{Label: "Goto", Action: func() { InputGotoLine() }, Shortcut: tcell.KeyCtrlG},
 		{Label: "Find", Action: func() {
 			layout.ResizeItem(searchPanel, 1, 0)
-			app.SetFocus(searchPanel.input)
+			app.SetFocus(searchPanel.searchInput)
 			searchPanel.active = true
 		}, Shortcut: tcell.KeyCtrlF},
 		{Label: "Replace", Action: func() { /*...*/ }},
@@ -167,24 +168,24 @@ func setUI() {
 	statusBar := tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(statusFilePos, 0, 1, false).
 		AddItem(statusMessage, 0, 1, false).
-		AddItem(statusSize, 12, 0, false).
+		AddItem(statusSize, 20, 0, false).
 		AddItem(statusTabs, 10, 0, false).
 		AddItem(statusModified, 10, 0, false).
 		AddItem(statusTime, 10, 0, false)
 
 	searchPanel = NewSearchPanel()
-	searchPanel.input.SetChangedFunc(func(text string) {
+	searchPanel.searchInput.SetChangedFunc(func(text string) {
 		if text == "" {
 			searchPanel.label.SetText("")
 			return
 		}
 		totalMatches = performSearch(text)
-		searchPanel.label.SetText(fmt.Sprintf(" [black]%d occurence(s)[-]", totalMatches))
+		searchPanel.label.SetText(fmt.Sprintf(" [%s]%d occurence(s)[-]", conf.GetColor(config.MenuTextColor), totalMatches))
 	})
-	searchPanel.input.SetDoneFunc(func(key tcell.Key) {
+	searchPanel.searchInput.SetDoneFunc(func(key tcell.Key) {
 		switch key {
 		case tcell.KeyEnter:
-			query := searchPanel.input.GetText()
+			query := searchPanel.searchInput.GetText()
 			if query != "" {
 				lastSearchQuery = query
 				app.SetFocus(editor)
@@ -209,7 +210,7 @@ func setUI() {
 	// Refresh status bar every 500ms
 	go func() {
 		for {
-			time.Sleep(500 * time.Millisecond) // Prevent too much CPU usage
+			time.Sleep(100 * time.Millisecond) // Prevent too much CPU usage
 			app.QueueUpdateDraw(func() {
 				refreshStatus()
 			})
@@ -246,17 +247,18 @@ func refreshStatus() {
 	}
 
 	cursorX, cursorY := editor.Cursor.X, editor.Cursor.Y
-	statusFilePos.SetText(fmt.Sprintf("[%s] %s  Ln %d, Col %d", getFilePagination(), name, cursorY+1, cursorX+1))
+	percent := getScrollPercentage()
+	statusFilePos.SetText(fmt.Sprintf("[%s] [%s]%s[-]  Ln %d, Col %d", getFilePagination(), conf.GetColor(config.MenuSelectedColor), name, cursorY+1, cursorX+1))
 
 	size := editor.Buf.Len()
-	statusSize.SetText(utils.HumanFileSize(float64(size)))
+	statusSize.SetText(utils.HumanFileSize(float64(size)) + fmt.Sprintf(" (%d%%)", percent))
 
 	modifiedText := ""
 	if CurrentFile.ReadOnly {
-		modifiedText = "[yellow]READ-ONLY[-]"
+		modifiedText = fmt.Sprintf("[%s]READ-ONLY[-]", conf.GetColor(config.MenuSelectedColor))
 		fileMenu[2].Disabled = true // Disable "Save" if the file is read-only
 	} else if CurrentFile.FemtoBuffer != nil && CurrentFile.FemtoBuffer.Modified() {
-		modifiedText = "[red]modified[-]"
+		modifiedText = fmt.Sprintf("[%s]MODIFIED[-]", conf.GetColor(config.MenuSelectedColor))
 		fileMenu[2].Disabled = false // Enable "Save"
 	} else {
 		modifiedText = ""
