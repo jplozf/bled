@@ -198,7 +198,7 @@ func setUI() {
 	menuBar.AddMenu(" File ", fileMenu)
 
 	gitEntries = []MenuEntry{
-		{Label: "Status", Action: func() { /*...*/ }, Shortcut: tcell.KeyF3},
+		{Label: "Status", Action: func() { /*...*/ }},
 		{Label: "Commit", Action: func() { /*...*/ }},
 		{Label: "Push", Action: func() { /*...*/ }},
 		{Label: "Pull", Action: func() { /*...*/ }},
@@ -215,7 +215,7 @@ func setUI() {
 		{Label: "Find & Replace", Action: func() {
 			toggleSearchPanel(true)
 		}, Shortcut: tcell.KeyCtrlF},
-		{Label: "Git Tracking", SubEntries: gitEntries, Shortcut: tcell.KeyF3},
+		{Label: "Git Tracking", SubEntries: gitEntries},
 	}
 	menuBar.AddMenu(" Edit ", editEntries)
 

@@ -50,6 +50,7 @@ type AppMenuBar struct {
 	activeList    *tview.List
 	mainPrimitive tview.Primitive
 	versionView   *tview.TextView
+	menuStack     []string
 }
 
 // ****************************************************************************
@@ -297,18 +298,17 @@ func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string
 	for _, entry := range entries {
 		length := len(entry.Label) + 3
 		if entry.IsCheckable {
-			length += 2
-		} // Espace pour "[x] "
+			length += 4
+		}
 		if len(entry.SubEntries) > 0 {
-			length += 2
+			length += 3
 		}
 		if length > maxLabelWidth {
 			maxLabelWidth = length
 		}
 	}
 	listWidth := maxLabelWidth + 2
-
-	if listWidth < 15 { // Largeur minimale pour que ce ne soit pas trop étroit
+	if listWidth < 15 {
 		listWidth = 15
 	}
 
@@ -325,32 +325,27 @@ func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string
 
 	list := tview.NewList().ShowSecondaryText(false)
 	list.SetBorder(false)
-
-	// 1. LE FOND GLOBAL DU COMPOSANT
 	list.SetBackgroundColor(conf.GetColor(config.MenuBgColor))
-
-	// 2. LE TEXTE PAR DÉFAUT (Non sélectionné)
-	// On force le noir sur jaune pour TOUS les items
 	list.SetMainTextColor(conf.GetColor(config.MenuTextColor))
-
-	// 3. L'ITEM SÉLECTIONNÉ (Votre barre rouge)
 	list.SetSelectedBackgroundColor(conf.GetColor(config.MenuSelectedColor))
 	list.SetSelectedTextColor(tcell.ColorWhite)
-
-	// 4. TRÈS IMPORTANT : Désactiver le style "Focus Only"
-	// Cela force la liste à utiliser vos couleurs même si le focus bégaye
 	list.SetSelectedFocusOnly(false)
 
-	// Si c'est le menu principal (dropdown), on le mémorise
+	// Si c'est le premier menu (dropdown principal), on vide la pile
 	if pageName == "dropdown" {
+		m.menuStack = []string{pageName}
 		m.activeList = list
+	} else {
+		// Sinon on ajoute ce sous-menu à la pile
+		m.menuStack = append(m.menuStack, pageName)
 	}
 
 	for i := range entries {
 		e := &entries[i]
+		idx := i // Capture de l'index pour le closure
 		label := e.Label
 
-		prefix := "  " // Un peu d'espace à gauche
+		prefix := "  "
 		if e.IsCheckable {
 			if e.Checked {
 				prefix = "[\u221A] "
@@ -359,17 +354,13 @@ func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string
 			}
 		}
 
-		// On prépare le label SANS balise de fond (:)
-		// On ajoute juste des espaces pour que la barre de sélection (rouge)
-		// fasse toute la largeur du menu.
-		padding := strings.Repeat(" ", maxLabelWidth+1-len(label)-len(prefix))
+		padding := strings.Repeat(" ", maxLabelWidth-len(label)-len(prefix))
 		displayLabel := prefix + label + padding
 
 		if e.Disabled {
 			displayLabel = fmt.Sprintf("[%s]%s[%s]", conf.GetColor(config.MenuDisabledColor), displayLabel, conf.GetColor(config.MenuTextColor))
 		} else if len(e.SubEntries) > 0 {
-			// On remplace le dernier espace par la flèche
-			displayLabel = displayLabel[:len(displayLabel)-1] + ">"
+			displayLabel += " >"
 		}
 
 		list.AddItem(displayLabel, "", 0, func() {
@@ -377,13 +368,17 @@ func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string
 				return
 			}
 
-			// Si c'est coché, on inverse l'état
+			// --- GESTION SOUS-MENU AU CLIC ---
+			if len(e.SubEntries) > 0 {
+				subPageName := fmt.Sprintf("submenu_%d", len(m.menuStack))
+				m.showDropdown(e.SubEntries, x+listWidth, y+idx, subPageName)
+				return
+			}
+
 			if e.IsCheckable {
 				e.Checked = !e.Checked
-				// Note : On ne ferme pas le menu pour que l'utilisateur
-				// voie le changement, ou on le ferme selon votre choix UX.
 				m.closeAllMenus()
-			} else if len(e.SubEntries) == 0 {
+			} else {
 				m.closeAllMenus()
 			}
 
@@ -393,58 +388,44 @@ func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string
 		})
 	}
 
-	// --- LA CORRECTION RADICALE ---
-	// On définit la zone de dessin de la liste manuellement
-	list.SetRect(x, y, listWidth, listHeight)
-
 	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// --- NAVIGATION DANS LE SOUS-MENU ---
-		if pageName == "submenu" {
-			if event.Key() == tcell.KeyLeft {
-				m.pages.RemovePage("submenu")
-				m.app.SetFocus(m.activeList) // Retour au parent direct
+		currIdx := list.GetCurrentItem()
+		entry := entries[currIdx]
+
+		switch event.Key() {
+		case tcell.KeyRight:
+			// Ouvrir le sous-menu si présent
+			if len(entry.SubEntries) > 0 {
+				subPageName := fmt.Sprintf("submenu_%d", len(m.menuStack))
+				m.showDropdown(entry.SubEntries, x+listWidth, y+currIdx, subPageName)
 				return nil
 			}
-
-			// Si on veut passer à l'item SUIVANT du parent avec Droite/Gauche
-			if event.Key() == tcell.KeyRight || event.Key() == tcell.KeyLeft {
-				m.pages.RemovePage("submenu")
-
-				// Déplacer la sélection dans la liste parente
-				curr := m.activeList.GetCurrentItem()
-				count := m.activeList.GetItemCount()
-				if event.Key() == tcell.KeyRight {
-					m.activeList.SetCurrentItem((curr + 1) % count)
-				} else {
-					m.activeList.SetCurrentItem((curr - 1 + count) % count)
-				}
-
-				// Simuler un appui sur Droite pour ouvrir le nouveau sous-menu
-				// On peut soit appeler récursivement, soit redonner le focus
-				m.app.SetFocus(m.activeList)
-				// Optionnel : Vous pouvez ici tester si le nouvel item a un sous-menu et l'ouvrir
-				return nil
-			}
-		}
-
-		// --- NAVIGATION DANS LE DROPDOWN PRINCIPAL ---
-		if pageName == "dropdown" {
-			// Si on appuie sur Droite sur un item SANS sous-menu
-			// ou sur Gauche n'importe quand -> On change de menu (Fichier -> Edition)
-			idx := list.GetCurrentItem()
-			if (event.Key() == tcell.KeyRight && len(entries[idx].SubEntries) == 0) || event.Key() == tcell.KeyLeft {
+			// Si on est au niveau 0 et pas de sous-menu, on change de menu principal
+			if pageName == "dropdown" {
 				m.closeAllMenus()
-				if event.Key() == tcell.KeyRight {
-					m.activeBtn = (m.activeBtn + 1) % len(m.buttons)
-				} else {
-					m.activeBtn = (m.activeBtn - 1 + len(m.buttons)) % len(m.buttons)
-				}
+				m.activeBtn = (m.activeBtn + 1) % len(m.buttons)
 				m.OpenCurrentMenu()
 				return nil
 			}
-		}
 
-		if event.Key() == tcell.KeyEsc {
+		case tcell.KeyLeft:
+			// Si c'est un sous-menu, on revient en arrière
+			if len(m.menuStack) > 1 {
+				lastPage := m.menuStack[len(m.menuStack)-1]
+				m.menuStack = m.menuStack[:len(m.menuStack)-1]
+				m.pages.RemovePage(lastPage)
+				// Le focus revient automatiquement à la page précédente visible
+				return nil
+			}
+			// Si on est au niveau 0, on change de menu principal
+			if pageName == "dropdown" {
+				m.closeAllMenus()
+				m.activeBtn = (m.activeBtn - 1 + len(m.buttons)) % len(m.buttons)
+				m.OpenCurrentMenu()
+				return nil
+			}
+
+		case tcell.KeyEsc:
 			m.closeAllMenus()
 			return nil
 		}
@@ -460,10 +441,12 @@ func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string
 // closeAllMenus()
 // ****************************************************************************
 func (m *AppMenuBar) closeAllMenus() {
-	m.pages.RemovePage("dropdown")
-	m.pages.RemovePage("submenu")
+	// Supprime toutes les pages enregistrées dans la pile
+	for _, pageName := range m.menuStack {
+		m.pages.RemovePage(pageName)
+	}
+	m.menuStack = nil
 	m.activeList = nil
-	m.app.SetFocus(m.Flex)
 	m.app.SetFocus(m.mainPrimitive)
 }
 
