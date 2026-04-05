@@ -486,3 +486,82 @@ func (m *AppMenuBar) OpenMenu() {
 		m.showDropdown(entries, bx, by+1, "dropdown")
 	}
 }
+
+// ****************************************************************************
+// ShowMenuPopup() - Affiche un menu au centre de l'écran avec un titre
+// ****************************************************************************
+func (m *AppMenuBar) ShowMenuPopup(title string, entries []MenuEntry) {
+	// 1. Calcul des dimensions
+	maxLabelWidth := len(title) + 4
+	for _, entry := range entries {
+		length := len(entry.Label) + 6
+		if length > maxLabelWidth {
+			maxLabelWidth = length
+		}
+	}
+
+	listWidth := maxLabelWidth + 4
+	listHeight := len(entries) + 2 // +2 pour la bordure haut/bas
+
+	// 2. Calcul du centre de l'écran
+	_, _, screenWidth, screenHeight := m.pages.GetInnerRect()
+	x := (screenWidth - listWidth) / 2
+	y := (screenHeight - listHeight) / 2
+
+	// 3. Création de la liste
+	list := tview.NewList().ShowSecondaryText(false)
+	list.SetBorder(true)
+	list.SetTitle(" " + title + " ")
+	list.SetTitleAlign(tview.AlignCenter)
+
+	// Couleurs (on réutilise votre thème)
+	list.SetBackgroundColor(conf.GetColor(config.MenuBgColor))
+	list.SetMainTextColor(conf.GetColor(config.MenuTextColor))
+	list.SetSelectedBackgroundColor(conf.GetColor(config.MenuSelectedColor))
+	list.SetSelectedTextColor(tcell.ColorWhite)
+	list.SetBorderColor(conf.GetColor(config.MenuSelectedColor))
+	list.SetSelectedFocusOnly(false)
+
+	// Gestion de la pile pour pouvoir fermer avec ESC
+	pageName := "popup_" + title
+	m.menuStack = append(m.menuStack, pageName)
+
+	for i := range entries {
+		e := &entries[i]
+		idx := i
+
+		displayLabel := "  " + e.Label
+		if len(e.SubEntries) > 0 {
+			displayLabel += " >"
+		}
+
+		list.AddItem(displayLabel, "", 0, func() {
+			if e.Disabled {
+				return
+			}
+
+			if len(e.SubEntries) > 0 {
+				m.showDropdown(e.SubEntries, x+listWidth, y+idx+1, "submenu")
+				return
+			}
+
+			m.closeAllMenus()
+			if e.Action != nil {
+				e.Action()
+			}
+		})
+	}
+
+	// Capture clavier pour quitter ou naviguer
+	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEsc {
+			m.closeAllMenus()
+			return nil
+		}
+		return event
+	})
+
+	list.SetRect(x, y, listWidth, listHeight)
+	m.pages.AddPage(pageName, list, false, true)
+	m.app.SetFocus(list)
+}

@@ -201,13 +201,6 @@ func setUI() {
 		{Label: "Status", Action: func() { /*...*/ }},
 		{Label: "Commit", Action: func() { /*...*/ }},
 		{Label: "Push", Action: func() { /*...*/ }},
-		{Label: "Pull", Action: func() { /*...*/ }},
-		{Label: "Diff", Action: func() { /*...*/ }},
-		{Label: "Log", Action: func() { /*...*/ }},
-		{Label: "Reset", Action: func() { /*...*/ }},
-		{Label: "Rebase", Action: func() { /*...*/ }},
-		{Label: "Merge", Action: func() { /*...*/ }},
-		{Label: "Cherry-Pick", Action: func() { /*...*/ }},
 	}
 
 	editEntries = []MenuEntry{
@@ -215,7 +208,7 @@ func setUI() {
 		{Label: "Find & Replace", Action: func() {
 			toggleSearchPanel(true)
 		}, Shortcut: tcell.KeyCtrlF},
-		{Label: "Git Tracking", SubEntries: gitEntries},
+		{Label: "Git Tracking", SubEntries: gitEntries, Action: func() { menuBar.ShowMenuPopup("Git Tracking", gitEntries) }, Shortcut: tcell.KeyF3},
 	}
 	menuBar.AddMenu(" Edit ", editEntries)
 
