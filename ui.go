@@ -34,6 +34,7 @@ var (
 	fileMenu                                                             []MenuEntry
 	editEntries                                                          []MenuEntry
 	helpEntries                                                          []MenuEntry
+	gitEntries                                                           []MenuEntry
 	editor                                                               *femto.View
 	config                                                               conf.Config
 	MsgBox                                                               *Dialog
@@ -41,6 +42,7 @@ var (
 	statusTabs                                                           *tview.TextView
 	layout                                                               *tview.Flex
 	searchPanel                                                          *SearchPanel
+	gotoPanel                                                            *GotoPanel
 )
 
 // ****************************************************************************
@@ -55,17 +57,28 @@ type SearchPanel struct {
 	active       bool
 }
 
+type GotoPanel struct {
+	*tview.Flex
+	input  *tview.InputField
+	label  *tview.TextView
+	active bool
+}
+
 // ****************************************************************************
 // NewSearchPanel()
 // ****************************************************************************
 func NewSearchPanel() *SearchPanel {
 	s := &SearchPanel{
-		Flex:        tview.NewFlex().SetDirection(tview.FlexColumn),
-		searchInput: tview.NewInputField().SetLabel(" Find: ").SetFieldWidth(25),
-		label:       tview.NewTextView().SetDynamicColors(true),
-		caseCheck:   tview.NewCheckbox().SetLabel(" Case sensitive : "),
+		Flex:         tview.NewFlex().SetDirection(tview.FlexRow),
+		searchInput:  tview.NewInputField().SetLabel(" Find   : ").SetFieldWidth(30),
+		replaceInput: tview.NewInputField().SetLabel(" Replace: ").SetFieldWidth(30),
+		label:        tview.NewTextView().SetDynamicColors(true),
+		caseCheck:    tview.NewCheckbox().SetLabel(" Case sensitive : "),
 	}
 	// Colors for the search panel
+	s.searchInput.SetFieldBackgroundColor(conf.GetColor(config.MenuBgColor)).SetLabelColor(conf.GetColor(config.MenuTextColor)).SetFieldTextColor(conf.GetColor(config.MenuTextColor))
+	s.replaceInput.SetFieldBackgroundColor(conf.GetColor(config.MenuBgColor)).SetLabelColor(conf.GetColor(config.MenuTextColor)).SetFieldTextColor(conf.GetColor(config.MenuTextColor))
+	s.label.SetBackgroundColor(conf.GetColor(config.MenuBgColor))
 	s.caseCheck.SetFieldBackgroundColor(conf.GetColor(config.MenuTextColor)).SetLabelColor(conf.GetColor(config.MenuTextColor)).SetFieldTextColor(conf.GetColor(config.MenuSelectedColor))
 
 	// Action on case sensitivity change
@@ -76,7 +89,7 @@ func NewSearchPanel() *SearchPanel {
 
 	s.searchInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
-			app.SetFocus(s.caseCheck) // Switch to the checkbox
+			app.SetFocus(s.caseCheck)
 			return nil
 		}
 		return event
@@ -84,20 +97,66 @@ func NewSearchPanel() *SearchPanel {
 
 	s.caseCheck.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
-			app.SetFocus(s.searchInput) // Switch back to the input
+			app.SetFocus(s.replaceInput)
 			return nil
 		}
 		return event
 	})
 
+	s.replaceInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyTab {
+			app.SetFocus(s.searchInput)
+			return nil
+		}
+
+		evkReplaceOne := tcell.NewEventKey(tcell.KeyRune, 'r', tcell.ModAlt)
+		if event.Key() == evkReplaceOne.Key() && event.Rune() == evkReplaceOne.Rune() && event.Modifiers() == evkReplaceOne.Modifiers() {
+			replaceCurrent()
+			return nil
+		}
+
+		evkReplaceAll := tcell.NewEventKey(tcell.KeyRune, 'a', tcell.ModAlt)
+		if event.Key() == evkReplaceAll.Key() && event.Rune() == evkReplaceAll.Rune() && event.Modifiers() == evkReplaceAll.Modifiers() {
+			replaceAll()
+			return nil
+		}
+
+		return event
+	})
+
 	// Panel's style
 	s.searchInput.SetFieldBackgroundColor(tcell.ColorBlack).SetLabelColor(tcell.ColorBlack).SetFieldTextColor(tcell.ColorYellow)
-	s.Flex.
+	s.replaceInput.SetFieldBackgroundColor(tcell.ColorBlack).SetLabelColor(tcell.ColorBlack).SetFieldTextColor(tcell.ColorYellow)
+
+	row1 := tview.NewFlex().
 		AddItem(s.searchInput, 0, 1, true).
 		AddItem(s.caseCheck, 20, 0, false).
 		AddItem(s.label, 20, 0, false)
 
+	row2 := tview.NewFlex().
+		AddItem(s.replaceInput, 0, 1, false).
+		AddItem(tview.NewTextView().SetText(" [Alt+R] Replace [Alt+A] All"), 30, 0, false)
+
+	s.AddItem(row1, 1, 0, true).
+		AddItem(row2, 1, 0, false)
+
 	return s
+}
+
+// ****************************************************************************
+// NewGotoPanel()
+// ****************************************************************************
+func NewGotoPanel() *GotoPanel {
+	g := &GotoPanel{
+		Flex:  tview.NewFlex().SetDirection(tview.FlexColumn),
+		input: tview.NewInputField().SetLabel(" Goto : ").SetFieldWidth(30),
+		label: tview.NewTextView().SetDynamicColors(true).SetText(" (Ex: 50, 80%, -10, top, end)"),
+	}
+
+	g.AddItem(g.input, 0, 1, true).
+		AddItem(g.label, 30, 0, false)
+
+	return g
 }
 
 // ****************************************************************************
@@ -138,14 +197,25 @@ func setUI() {
 	}
 	menuBar.AddMenu(" File ", fileMenu)
 
+	gitEntries = []MenuEntry{
+		{Label: "Status", Action: func() { /*...*/ }, Shortcut: tcell.KeyF3},
+		{Label: "Commit", Action: func() { /*...*/ }},
+		{Label: "Push", Action: func() { /*...*/ }},
+		{Label: "Pull", Action: func() { /*...*/ }},
+		{Label: "Diff", Action: func() { /*...*/ }},
+		{Label: "Log", Action: func() { /*...*/ }},
+		{Label: "Reset", Action: func() { /*...*/ }},
+		{Label: "Rebase", Action: func() { /*...*/ }},
+		{Label: "Merge", Action: func() { /*...*/ }},
+		{Label: "Cherry-Pick", Action: func() { /*...*/ }},
+	}
+
 	editEntries = []MenuEntry{
-		{Label: "Goto", Action: func() { InputGotoLine() }, Shortcut: tcell.KeyCtrlG},
-		{Label: "Find", Action: func() {
-			layout.ResizeItem(searchPanel, 1, 0)
-			app.SetFocus(searchPanel.searchInput)
-			searchPanel.active = true
+		{Label: "Goto", Action: func() { toggleGotoPanel(true) }, Shortcut: tcell.KeyCtrlG},
+		{Label: "Find & Replace", Action: func() {
+			toggleSearchPanel(true)
 		}, Shortcut: tcell.KeyCtrlF},
-		{Label: "Replace", Action: func() { /*...*/ }},
+		{Label: "Git Tracking", SubEntries: gitEntries, Shortcut: tcell.KeyF3},
 	}
 	menuBar.AddMenu(" Edit ", editEntries)
 
@@ -173,6 +243,25 @@ func setUI() {
 		AddItem(statusModified, 10, 0, false).
 		AddItem(statusTime, 10, 0, false)
 
+	gotoPanel = NewGotoPanel()
+	gotoPanel.input.SetDoneFunc(func(key tcell.Key) {
+		switch key {
+		case tcell.KeyEnter:
+			text := gotoPanel.input.GetText()
+			if text != "" {
+				gotoLocation(text)
+				gotoPanel.input.SetText("")
+			}
+			toggleGotoPanel(false)
+			gotoPanel.active = false
+			app.SetFocus(editor)
+		case tcell.KeyEsc:
+			toggleGotoPanel(false)
+			gotoPanel.active = false
+			app.SetFocus(editor)
+		}
+	})
+
 	searchPanel = NewSearchPanel()
 	searchPanel.searchInput.SetChangedFunc(func(text string) {
 		if text == "" {
@@ -182,6 +271,7 @@ func setUI() {
 		totalMatches = performSearch(text)
 		searchPanel.label.SetText(fmt.Sprintf(" [%s]%d occurence(s)[-]", conf.GetColor(config.MenuTextColor), totalMatches))
 	})
+
 	searchPanel.searchInput.SetDoneFunc(func(key tcell.Key) {
 		switch key {
 		case tcell.KeyEnter:
@@ -202,6 +292,7 @@ func setUI() {
 	layout = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(menuBar, 1, 0, false).
 		AddItem(editor, 0, 1, true).
+		AddItem(gotoPanel, 0, 0, false).
 		AddItem(searchPanel, 0, 0, false).
 		AddItem(statusBar, 1, 0, false)
 

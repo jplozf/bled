@@ -331,13 +331,7 @@ func gotoLocation(input string) {
 	loc.Y = targetLine
 	CurrentFile.FemtoBuffer.Cursor.GotoLoc(loc)
 	editor.OpenBuffer(CurrentFile.FemtoBuffer)
-	/*
-		view.Cursor.X = 0
-		view.Cursor.Y = targetLine
-
-		view.Center()
-	*/
-	SetStatus(fmt.Sprintf("Go to line %d/%d", targetLine+1, totalLines))
+	SetStatus(fmt.Sprintf("Go to line %d on %d", targetLine+1, totalLines))
 }
 
 // ****************************************************************************
@@ -380,19 +374,19 @@ func performSearch(query string) int {
 // ****************************************************************************
 func jumpToNextMatch() {
 	if lastSearchQuery == "" {
-		SetStatus("[yellow]No current search query[-]")
+		SetStatus("No current search query")
 		return
 	}
 
 	if CurrentFile == nil || CurrentFile.FemtoView == nil {
-		SetStatus("[red]Error : No file open or view not initialized[-]")
+		SetStatus("Error : No file open or view not initialized")
 		return
 	}
 
 	view := CurrentFile.FemtoView
 
 	if view.Cursor == nil {
-		SetStatus("[red]Error : Cursor not initialized[-]")
+		SetStatus("Error : Cursor not initialized")
 		return
 	}
 
@@ -467,4 +461,83 @@ func findNextLoc(query string, startX, startY int) *femto.Loc {
 	}
 
 	return nil // No match found
+}
+
+// ****************************************************************************
+// replaceCurrent()
+// ****************************************************************************
+func replaceCurrent() {
+	query := searchPanel.searchInput.GetText()
+	if query == "" {
+		SetStatus("Query field is empty")
+		return
+	}
+
+	view := CurrentFile.FemtoView
+	buf := CurrentFile.FemtoBuffer
+	replaceText := searchPanel.replaceInput.GetText()
+
+	// We get the current line where the cursor is
+	line := string(buf.Line(view.Cursor.Y))
+
+	// Logic for detection (pay attention to case sensitivity if the option is checked)
+	matchLine := line
+	matchQuery := query
+	if !searchPanel.caseCheck.IsChecked() {
+		matchLine = strings.ToLower(line)
+		matchQuery = strings.ToLower(query)
+	}
+
+	// Is the word right under the cursor ?
+	if strings.HasPrefix(matchLine[view.Cursor.X:], matchQuery) {
+		// Replacement
+		buf.Replace(
+			femto.Loc{X: view.Cursor.X, Y: view.Cursor.Y},
+			femto.Loc{X: view.Cursor.X + len(query), Y: view.Cursor.Y},
+			replaceText,
+		)
+		SetStatus("One occurrence has been replaced")
+		// We jump to the next match after replacement
+		lastSearchQuery = query // Update the global variable to ensure jumpToNextMatch uses the correct query
+		jumpToNextMatch()
+	} else {
+		// If the cursor is not on a match, we search for the next one first
+		lastSearchQuery = query // Update the global variable to ensure jumpToNextMatch uses the correct query
+		jumpToNextMatch()
+		SetStatus("Cursor moved to the next occurrence")
+	}
+}
+
+// ****************************************************************************
+// replaceAll()
+// ****************************************************************************
+func replaceAll() {
+	query := searchPanel.searchInput.GetText()
+	if query == "" {
+		SetStatus("No current search query")
+		return
+	}
+	lastSearchQuery = query // Update the global variable to ensure consistency
+
+	buf := CurrentFile.FemtoBuffer
+	replaceText := searchPanel.replaceInput.GetText()
+	// isSensitive := searchPanel.caseCheck.IsChecked()
+	count := 0
+
+	// We go through the lines from bottom to top to avoid shifting the X/Y indices
+	// while replacing texts of different lengths
+	for y := buf.NumLines - 1; y >= 0; y-- {
+		line := string(buf.Line(y))
+		// Search logic (case sensitive or not)
+		// ... (utiliser strings.ReplaceAll ou regex ici) ...
+
+		// Exemple simplifié :
+		if strings.Contains(line, lastSearchQuery) {
+			newLine := strings.ReplaceAll(line, lastSearchQuery, replaceText)
+			buf.Replace(femto.Loc{X: 0, Y: y}, femto.Loc{X: len(line), Y: y}, newLine)
+			count++
+		}
+	}
+	SetStatus("All occurrence(s) replaced")
+	// SetStatus(fmt.Sprintf("All %d occurrence(s) replaced", count))
 }

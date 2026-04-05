@@ -94,10 +94,13 @@ func main() {
 				menuBar.closeAllMenus()
 				app.SetFocus(editor)
 			} else {
+				toggleGotoPanel(false)
+				toggleSearchPanel(false)
 				app.SetFocus(menuBar)
 				menuBar.OpenMenu()
 			}
 			return nil
+
 		case tcell.KeyF6:
 			prevFile()
 			return nil
@@ -290,31 +293,6 @@ func confirmSaveAs(rc DlgButton, idx int) {
 }
 
 // ****************************************************************************
-// InputGotoLine()
-// ****************************************************************************
-func InputGotoLine() {
-	SetStatus("Goto line...")
-	DlgInputGotoLine = DlgInputGotoLine.Input(" Goto Line ", // Title
-		"Go to line :", // Message
-		"",
-		confirmGotoLine,
-		0,
-		"main", editor) // Focus return
-	pages.AddPage("dlgInputGotoLine", DlgInputGotoLine.Popup(), true, false)
-	pages.ShowPage("dlgInputGotoLine")
-}
-
-// ****************************************************************************
-// confirmGotoLine()
-// ****************************************************************************
-func confirmGotoLine(rc DlgButton, idx int) {
-	if rc == BUTTON_OK {
-		line := DlgInputGotoLine.Value
-		gotoLocation(line)
-	}
-}
-
-// ****************************************************************************
 // ShowManual()
 // ****************************************************************************
 func ShowManual() {
@@ -460,26 +438,68 @@ func isTextFile(path string) (bool, error) {
 	return false, nil
 }
 
+// ****************************************************************************
+// getScrollPercentage()
+// ****************************************************************************
 func getScrollPercentage() int {
 	if CurrentFile == nil || CurrentFile.FemtoBuffer == nil {
 		return 0
 	}
 
 	totalLines := CurrentFile.FemtoBuffer.NumLines
-	// Si le fichier est vide ou n'a qu'une ligne
 	if totalLines <= 1 {
 		return 100
 	}
 
 	currentLine := CurrentFile.FemtoView.Cursor.Y
-
-	// Calcul : (Ligne actuelle / (Total - 1)) * 100
-	// On utilise Total-1 pour que la dernière ligne affiche bien 100%
 	percent := (currentLine * 100) / (totalLines - 1)
 
 	return percent
 }
 
+// ****************************************************************************
+// toggleGotoPanel()
+// ****************************************************************************
+func toggleGotoPanel(show bool) {
+	if show {
+		// On cache le panneau de recherche s'il est ouvert pour éviter l'empilement
+		toggleSearchPanel(false)
+
+		layout.ResizeItem(gotoPanel, 1, 0) // On lui donne 1 ligne de hauteur
+		gotoPanel.active = true
+		app.SetFocus(gotoPanel.input)
+	} else {
+		layout.ResizeItem(gotoPanel, 0, 0) // On le cache
+		gotoPanel.active = false
+		if CurrentFile != nil {
+			app.SetFocus(CurrentFile.FemtoView)
+		}
+	}
+}
+
+// ****************************************************************************
+// toggleSearchPanel()
+// ****************************************************************************
+func toggleSearchPanel(show bool) {
+	if show {
+		// On cache le panneau de recherche s'il est ouvert pour éviter l'empilement
+		toggleGotoPanel(false)
+
+		layout.ResizeItem(searchPanel, 2, 0) // On lui donne 2 lignes de hauteur
+		searchPanel.active = true
+		app.SetFocus(searchPanel.searchInput)
+	} else {
+		layout.ResizeItem(searchPanel, 0, 0) // On le cache
+		searchPanel.active = false
+		if CurrentFile != nil {
+			app.SetFocus(CurrentFile.FemtoView)
+		}
+	}
+}
+
+// ****************************************************************************
+// H E L P   T E X T
+// ****************************************************************************
 var helpText = `⚶ B L E D   -   Copyright © JPL 2026
 
 Bled is a TUI (Text User Interface) Editor.
@@ -495,6 +515,7 @@ pgavlin/femto : An editor component for tview. Derived from the micro editor.
 ⯈ The main functions are reachable through function keys :
 
 F1  : This help text
+F3  : Jump to "Source Control" panel
 F4  : Jump to the next match of the current search query
 F6  : Switch to the previous open file
 F7  : Switch to the next open file
@@ -502,13 +523,13 @@ F10 : Access to the main menu of Bled
 
 ⯈ Alternate common functions are also reachable through CTRL and ALT keys :
 
-CTRL + F : Switch to the Find & Replace panel
+CTRL + F : Switch to the "Find & Replace" panel
 CTRL + S : Saves the current document being edited
 ALT  + S : Saves the current document being edited under another name
 CTRL + N : Opens a new blank document
 CTRL + O : Opens an existing document for editing
 CTRL + T : Closes the current document
-CTRL + G : Opens the "Goto line" dialog to jump to a specific line number
+CTRL + G : Opens the "Goto" panel to jump to a specific part of the document
 CTRL + Q : Quit Bled
 
 ⯈ When editing a text, common editing functions are of course supported :
