@@ -45,6 +45,10 @@ var (
 	lastSearchQuery  string
 	totalMatches     int
 	currentMatchIdx  int
+	ACmd             []string
+	ICmd             int
+	currentDir       string
+	GITInfos         string
 )
 
 // MAJOR Version number, injected at build time
@@ -58,6 +62,7 @@ var GitVersion = "dev"
 // ****************************************************************************
 func main() {
 	// Setup the UI components
+	GITInfos = fmt.Sprintf("%s %s %s", conf.APP_ICON, conf.APP_NAME, getFullVersion())
 	setUI()
 
 	// Global input capture for shortcuts and focus management
@@ -161,10 +166,12 @@ func main() {
 				continue
 			}
 			openFile(absPath, false)
+			currentDir = filepath.Dir(absPath)
 		}
 	} else {
 		// Open a new file if no filename is provided
 		newFile()
+		currentDir, _ = os.Getwd()
 	}
 
 	// Start the application
@@ -185,7 +192,7 @@ func getFullVersion() string {
 // ****************************************************************************
 func ShowWelcomePopup() {
 	msg := fmt.Sprintf("Welcome to %s v%s\n\nVisit the GitHub repository :\n%s", conf.APP_NAME, getFullVersion(), conf.APP_URL)
-	MsgBox = MsgBox.OK("Welcome", msg, nil, 0, "main", editor)
+	MsgBox = MsgBox.Info("Welcome", msg, nil, 0, "main", editor)
 	pages.AddPage("msgNewVersion", MsgBox.Popup(), true, false)
 	pages.ShowPage("msgNewVersion")
 }
@@ -232,13 +239,8 @@ func openSettings() {
 // InputFileOpen()
 // ****************************************************************************
 func InputFileOpen() {
-	path, err := os.Getwd()
-	if err != nil {
-		SetStatus("Error getting current working directory : " + err.Error())
-		return
-	}
 	DlgInputFileOpen = DlgInputFileOpen.FileBrowser("Open File", // Title
-		path,
+		currentDir,
 		doOpenFile,
 		0,
 		"main", editor, false)
@@ -500,12 +502,15 @@ func toggleSearchPanel(show bool) {
 // ****************************************************************************
 // H E L P   T E X T
 // ****************************************************************************
-var helpText = `⚶ B L E D   -   Copyright © JPL 2026
+var helpText = `--------------------------------------------------------------------------
+⚶ B L E D   -   Copyright © JPL 2026   -   https://github.com/jplozf/bled
+--------------------------------------------------------------------------
 
 Bled is a TUI (Text User Interface) Editor.
 Bled is written in Go and has been tested on Linux sytem.
 Built from source, it should run on Windows or MacOS systems as well.
 Several files can be opened at the same time, and you can switch between them easily.
+Current Git commands are implemented.
 
 Pay honour to whom honour is due, packages used in this project are as follows :
 rivo/tview    : Package tview implements rich widgets for terminal based user interfaces.
@@ -515,7 +520,8 @@ pgavlin/femto : An editor component for tview. Derived from the micro editor.
 ⯈ The main functions are reachable through function keys :
 
 F1  : This help text
-F3  : Jump to "Source Control" panel
+F3  : Jump to the "Git Tracking" menu
+F5  : Jump to the "Find & Replace" panel
 F4  : Jump to the next match of the current search query
 F6  : Switch to the previous open file
 F7  : Switch to the next open file
@@ -552,6 +558,8 @@ status_message_duration : Duration in seconds for which status messages are disp
 show_hidden_files       : Whether to show hidden files in the file browser dialog
 color_accent            : Accent color used in the UI (e.g. for highlights)
 theme                   : Theme name (see below for available themes)
+git_user                : User name used for Github commits
+git_key                 : Key used for Github operations
 
 ⯈ Available themes are as follows (theme names are case-sensitive) :
 

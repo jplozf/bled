@@ -50,6 +50,7 @@ const (
 	INPUT_FILE
 	INPUT_CLI
 	INPUT_DELETE
+	INPUT_INFO
 )
 
 type DlgRC struct {
@@ -147,6 +148,32 @@ func (m *Dialog) OK(title string, message string, done func(rc DlgButton, idx in
 		focus:   focus,
 		idx:     idx,
 		dtype:   INPUT_NONE,
+	}
+
+	m.SetButtonsAlign(tview.AlignCenter)
+	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
+	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
+	m.SetBorder(true).
+		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
+		SetBorderPadding(1, 1, 1, 1)
+	m.buttons = append(m.buttons, tview.NewButton("OK").SetSelectedFunc(m.doOK))
+	return m
+}
+
+// ****************************************************************************
+// Info()
+// ****************************************************************************
+func (m *Dialog) Info(title string, message string, done func(rc DlgButton, idx int), idx int, parent string, focus tview.Primitive) *Dialog {
+	m = &Dialog{
+		Form:    tview.NewForm(),
+		title:   title,
+		message: message,
+		done:    done,
+		parent:  parent,
+		focus:   focus,
+		idx:     idx,
+		dtype:   INPUT_INFO,
 	}
 
 	m.SetButtonsAlign(tview.AlignCenter)
@@ -467,8 +494,12 @@ func (m *Dialog) setUI() {
 			m.AddTextView("", m.message, 0, 1, true, false)
 		}
 		m.AddInputField(">", m.Value, 0, nil, nil)
-	default:
+	case INPUT_INFO:
 		m.AddTextView("", m.message, utils.GetMaxLineLength(m.message)+2, utils.GetLineCount(m.message)+2, false, true)
+		m.GetFormItem(0).(*tview.TextView).SetWrap(false)
+		m.GetFormItem(0).(*tview.TextView).SetDynamicColors(true)
+	default:
+		m.AddTextView("", m.message, 60, 21, false, true)
 		m.GetFormItem(0).(*tview.TextView).SetWrap(false)
 		m.GetFormItem(0).(*tview.TextView).SetDynamicColors(true)
 	}
@@ -492,8 +523,8 @@ func (m *Dialog) setUI() {
 			m.AddButton(l, f)
 			m.width += len(l) + 2
 		}
-		if m.width < utils.GetMaxLineLength(m.message) {
-			m.width = utils.GetMaxLineLength(m.message)
+		if m.width < len(m.message) {
+			m.width = len(m.message)
 		}
 		if m.width < len(m.title) {
 			m.width = len(m.title)
@@ -507,7 +538,7 @@ func (m *Dialog) setUI() {
 			m.height += 2
 		}
 	} else {
-		m.width = utils.GetMaxLineLength(m.message)
+		m.width = len(m.message)
 		if m.width < len(m.title) {
 			m.width = len(m.title)
 		}
@@ -518,6 +549,10 @@ func (m *Dialog) setUI() {
 		m.height = 7
 	}
 	if m.dtype == INPUT_NONE {
+		m.width = 64
+		m.height = 27
+	}
+	if m.dtype == INPUT_INFO {
 		m.width = utils.GetMaxLineLength(m.message) + 6
 		m.height = utils.GetLineCount(m.message) + 8
 	}

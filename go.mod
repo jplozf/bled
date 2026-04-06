@@ -4,6 +4,7 @@ go 1.25.7
 
 require (
 	github.com/gdamore/tcell/v2 v2.13.8
+	github.com/go-cmd/cmd v1.4.3
 	github.com/pgavlin/femto v0.0.0-20201224065653-0c9d20f9cac4
 	github.com/rivo/tview v0.42.0
 )

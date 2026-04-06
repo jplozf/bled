@@ -84,11 +84,11 @@ func NewAppMenuBar(app *tview.Application, pages *tview.Pages) *AppMenuBar {
 	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
 
 	// Initialisation de la version dès le départ
-	versionStr := fmt.Sprintf("%s %s %s", conf.APP_ICON, conf.APP_NAME, getFullVersion())
+	// versionStr := fmt.Sprintf("%s %s %s", conf.APP_ICON, conf.APP_NAME, getFullVersion())
 	m.versionView = tview.NewTextView().
 		SetTextAlign(tview.AlignRight).
 		SetDynamicColors(true).
-		SetText(versionStr + " ")
+		SetText(GITInfos + " ")
 
 	m.versionView.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
 	m.versionView.SetTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
@@ -196,7 +196,8 @@ func (m *AppMenuBar) rebuildBar() {
 	// 4. On ajoute la version (à droite)
 	if m.versionView != nil {
 		// On récupère le texte brut pour calculer la largeur sans les tags [color]
-		versionText := m.versionView.GetText(true)
+		m.versionView.SetText(GITInfos + " ")       // Assure que le texte est à jour
+		versionText := m.versionView.GetText(false) // false pour obtenir le texte sans les tags de couleur
 		m.AddItem(m.versionView, len(versionText)+1, 0, false)
 	}
 }
@@ -360,7 +361,7 @@ func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string
 		if e.Disabled {
 			displayLabel = fmt.Sprintf("[%s]%s[%s]", conf.GetColor(config.MenuDisabledColor), displayLabel, conf.GetColor(config.MenuTextColor))
 		} else if len(e.SubEntries) > 0 {
-			displayLabel += " >"
+			displayLabel += " ⯈"
 		}
 
 		list.AddItem(displayLabel, "", 0, func() {
@@ -532,7 +533,7 @@ func (m *AppMenuBar) ShowMenuPopup(title string, entries []MenuEntry) {
 
 		displayLabel := "  " + e.Label
 		if len(e.SubEntries) > 0 {
-			displayLabel += " >"
+			displayLabel += " ⯈"
 		}
 
 		list.AddItem(displayLabel, "", 0, func() {

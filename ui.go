@@ -198,9 +198,17 @@ func setUI() {
 	menuBar.AddMenu(" File ", fileMenu)
 
 	gitEntries = []MenuEntry{
-		{Label: "Status", Action: func() { /*...*/ }},
-		{Label: "Commit", Action: func() { /*...*/ }},
-		{Label: "Push", Action: func() { /*...*/ }},
+		{Label: "Status", Action: func() { DoGitStatus() }},
+		{Label: "Log", Action: func() { DoGitLog() }},
+		{Label: "Add all (.)", Action: func() { DoGitAddAll() }},
+		{Label: "Commit", Action: func() { DoGitCommit() }},
+		{Label: "Push", Action: func() { DoGitPush() }},
+		{Label: "Commit & Push", Action: func() { DoGitCommitPush() }},
+		{Label: "Fetch", Action: func() { DoGitFetch() }},
+		{Label: "Pull (Fetch & Merge)", Action: func() { DoGitPull() }},
+		{Label: "Initialize", Action: func() { DoGitInit() }},
+		{Label: "Initialize & Push", Action: func() { DoGitBang() }},
+		{Label: "Clone", Action: func() { DoGitClone() }},
 	}
 
 	editEntries = []MenuEntry{

@@ -4,6 +4,7 @@ package main
 // IMPORTS
 // ****************************************************************************
 import (
+	"bled/conf"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -196,6 +197,13 @@ func switchDocument(index int) {
 	refreshFileMenu()
 	SetStatus("Current file: " + filepath.Base(CurrentFile.FName))
 	SetTheme(config.Theme)
+	currentDir = filepath.Dir(CurrentFile.FName)
+	if IsFileGitTracked(CurrentFile.FName) {
+		GITInfos = GetGITOneTagForFile(CurrentFile.FName)
+	} else {
+		GITInfos = fmt.Sprintf("%s %s %s", conf.APP_ICON, conf.APP_NAME, getFullVersion())
+	}
+	menuBar.rebuildBar()
 }
 
 // ****************************************************************************

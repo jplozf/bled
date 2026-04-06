@@ -28,6 +28,7 @@ const (
 	APP_ICON          = "⚶"
 	NEW_FILE_TEMPLATE = "noname_"
 	FILE_CONFIG       = "config.json"
+	FILE_LOG          = "bled.log"
 	FILE_MRU          = "mru"
 )
 
@@ -42,6 +43,8 @@ type Config struct {
 	ShowHiddenFiles       bool   `json:"show_hidden_files"`
 	ColorAccent           string `json:"color_accent"`
 	Theme                 string `json:"theme"`
+	GitUser               string `json:"git_user"`
+	GitKey                string `json:"git_key"`
 }
 
 // ****************************************************************************
@@ -64,6 +67,25 @@ func GetConfigPath() string {
 }
 
 // ****************************************************************************
+// GetLogPath()
+// ****************************************************************************
+func GetLogPath() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return FILE_LOG // Fallback
+	}
+
+	logDir := filepath.Join(home, APP_FOLDER)
+
+	err = os.MkdirAll(logDir, 0755)
+	if err != nil {
+		return FILE_LOG // Fallback
+	}
+
+	return filepath.Join(logDir, FILE_LOG)
+}
+
+// ****************************************************************************
 // LoadConfig()
 // ****************************************************************************
 func LoadConfig() Config {
@@ -81,6 +103,8 @@ func LoadConfig() Config {
 		ShowHiddenFiles:       false,
 		ColorAccent:           "#556B2F",
 		Theme:                 "monokai",
+		GitUser:               "github_user",
+		GitKey:                "github_key",
 	}
 
 	data, err := os.ReadFile(path)
