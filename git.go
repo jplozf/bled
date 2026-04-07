@@ -68,14 +68,14 @@ func DoGitBang() {
 			fmt.Sprintf("This will initialize and push a Git environment\nfor your project \"%s\".\n\nAre you sure you want to proceed ?", pjname), // Message
 			func(rc DlgButton, idx int) {
 				if rc == BUTTON_YES {
-					if config.GitUser == "" {
-						SetStatus("Git User is not yet configured")
+					if config.GithubUser == "" {
+						SetStatus("Github User is not yet configured")
 					} else {
 						DlgYesNo2 = DlgYesNo2.YesNo("Git Bang", // Title
-							"The following repository should already exist :\n\nhttps://github.com/"+config.GitUser+"/"+pjname+"\n\nHas the repository already been created ?", // Message
+							"The following repository should already exist :\n\nhttps://github.com/"+config.GithubUser+"/"+pjname+"\n\nHas the repository already been created ?", // Message
 							func(rc DlgButton, idx int) {
 								if rc == BUTTON_YES {
-									url := "https://" + config.GitKey + "@github.com/" + config.GitUser + "/" + pjname
+									url := "https://" + config.GithubKey + "@github.com/" + config.GithubUser + "/" + pjname
 									Xeq("git init")
 									Xeq("git add .")
 									Xeq("git commit -m \"First Commit\"")
@@ -208,7 +208,7 @@ func DoGitInit() {
 			fmt.Sprintf("This will initialize a Git environment\nfor your project \"%s\".\n\nAre you sure you want to proceed ?", pjname), // Message
 			func(rc DlgButton, idx int) {
 				if rc == BUTTON_YES {
-					if config.GitUser == "" {
+					if config.GithubUser == "" {
 						SetStatus("Git User is not yet configured")
 					} else {
 
@@ -456,7 +456,7 @@ func DoGitClone() {
 			"https://github.com/repo/project.git",                     // Default value
 			func(rc DlgButton, idx int) {
 				if rc == BUTTON_OK {
-					out := fmt.Sprintf("Cloning...\n%s", XeqOut("git clone \""+DlgInputBox.Value+"\""))
+					out := fmt.Sprintf("Cloning...\n%s", XeqOut("git clone "+DlgInputBox.Value))
 					MsgBox = MsgBox.OK("Git Clone", out, nil, 0, "main", editor)
 					pages.AddPage("msgBox", MsgBox.Popup(), true, false)
 					pages.ShowPage("msgBox")

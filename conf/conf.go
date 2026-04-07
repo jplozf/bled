@@ -43,8 +43,8 @@ type Config struct {
 	ShowHiddenFiles       bool   `json:"show_hidden_files"`
 	ColorAccent           string `json:"color_accent"`
 	Theme                 string `json:"theme"`
-	GitUser               string `json:"git_user"`
-	GitKey                string `json:"git_key"`
+	GithubUser            string `json:"github_user"`
+	GithubKey             string `json:"github_key"`
 }
 
 // ****************************************************************************
@@ -103,8 +103,8 @@ func LoadConfig() Config {
 		ShowHiddenFiles:       false,
 		ColorAccent:           "#556B2F",
 		Theme:                 "monokai",
-		GitUser:               "github_user",
-		GitKey:                "github_key",
+		GithubUser:            "github_user",
+		GithubKey:             "github_key",
 	}
 
 	data, err := os.ReadFile(path)

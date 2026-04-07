@@ -558,8 +558,8 @@ status_message_duration : Duration in seconds for which status messages are disp
 show_hidden_files       : Whether to show hidden files in the file browser dialog
 color_accent            : Accent color used in the UI (e.g. for highlights)
 theme                   : Theme name (see below for available themes)
-git_user                : User name used for Github commits
-git_key                 : Key used for Github operations
+github_user             : User name used for Github commits
+github_key              : Key used for Github operations
 
 ⯈ Available themes are as follows (theme names are case-sensitive) :
 
