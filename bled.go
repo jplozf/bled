@@ -87,12 +87,19 @@ func main() {
 			return nil
 
 		case tcell.KeyEsc:
+			pages.SwitchToPage("main")
+			app.SetFocus(editor)
 			if searchPanel.active {
 				layout.ResizeItem(searchPanel, 0, 0)
 				app.SetFocus(editor)
 				searchPanel.active = false
-				return nil
 			}
+			if gotoPanel.active {
+				layout.ResizeItem(gotoPanel, 0, 0)
+				app.SetFocus(editor)
+				gotoPanel.active = false
+			}
+			return nil
 
 		case tcell.KeyF10:
 			if menuBar.HasFocus() {
@@ -191,7 +198,7 @@ func getFullVersion() string {
 // ShowWelcomePopup()
 // ****************************************************************************
 func ShowWelcomePopup() {
-	msg := fmt.Sprintf("Welcome to %s v%s\n\nVisit the GitHub repository :\n%s", conf.APP_NAME, getFullVersion(), conf.APP_URL)
+	msg := fmt.Sprintf("Welcome to %s v%s\n\nVisit the GitHub repository :\n%s\n\nF1  : Help\nF10 : Menu\nEsc : Close this panel", conf.APP_NAME, getFullVersion(), conf.APP_URL)
 	MsgBox = MsgBox.Info("Welcome", msg, nil, 0, "main", editor)
 	pages.AddPage("msgNewVersion", MsgBox.Popup(), true, false)
 	pages.ShowPage("msgNewVersion")
@@ -201,24 +208,49 @@ func ShowWelcomePopup() {
 // safeQuit()
 // ****************************************************************************
 func safeQuit() {
-	if CurrentFile.FemtoBuffer != nil && CurrentFile.FemtoBuffer.Modified() {
-		DlgQuit = DlgQuit.YesNo("Quit", // Title
-			"You have unsaved changes.\nDo you want to quit without saving ?", // Message
-			func(rc DlgButton, idx int) {
-				if rc == BUTTON_YES {
-					app.Stop()
-				} else {
-					SetStatus("Canceling quit")
-				}
-			},
-			0,
-			"main", editor)
-		pages.AddPage("dlgQuit", DlgQuit.Popup(), true, false)
-		pages.ShowPage("dlgQuit")
-	} else {
-		app.Stop()
-		fmt.Printf("%s %s v%s - %s\n", conf.APP_ICON, conf.APP_NAME, getFullVersion(), conf.APP_URL)
+	var fileToProcess *efile
+	i := 0
+	for _, f := range efiles {
+		if f.FemtoBuffer != nil && f.FemtoBuffer.Modified() {
+			fileToProcess = f
+			break
+		}
+		i++
 	}
+
+	if fileToProcess == nil {
+		terminateApp()
+		return
+	}
+
+	switchDocument(i)
+
+	DlgQuit = DlgQuit.YesNoCancel("Quit", // Title
+		fmt.Sprintf("File '%s'\nhas been modified.\n\nDo you want to save it before quitting ?", fileToProcess.FName), // Message
+		func(rc DlgButton, idx int) {
+			switch rc {
+			case BUTTON_YES:
+				saveFile()
+				safeQuit()
+			case BUTTON_NO:
+				fileToProcess.FemtoBuffer.IsModified = false
+				safeQuit()
+			case BUTTON_CANCEL:
+				SetStatus("Canceling quit")
+			}
+		},
+		0, "main", editor)
+
+	pages.AddPage("dlgQuit", DlgQuit.Popup(), true, false)
+	pages.ShowPage("dlgQuit")
+}
+
+// ****************************************************************************
+// terminateApp()
+// ****************************************************************************
+func terminateApp() {
+	app.Stop()
+	fmt.Printf("%s %s v%s - %s\n", conf.APP_ICON, conf.APP_NAME, getFullVersion(), conf.APP_URL)
 }
 
 // ****************************************************************************
@@ -506,11 +538,11 @@ var helpText = `----------------------------------------------------------------
 ⚶ B L E D   -   Copyright © JPL 2026   -   https://github.com/jplozf/bled
 --------------------------------------------------------------------------
 
-Bled is a TUI (Text User Interface) Editor.
+Bled is a Text User Interface (TUI) Editor.
 Bled is written in Go and has been tested on Linux sytem.
 Built from source, it should run on Windows or MacOS systems as well.
-Several files can be opened at the same time, and you can switch between them easily.
-Current Git commands are implemented.
+Multiple files can be opened at the same time, and you can switch between them easily.
+Common Git commands are implemented.
 
 Pay honour to whom honour is due, packages used in this project are as follows :
 rivo/tview    : Package tview implements rich widgets for terminal based user interfaces.

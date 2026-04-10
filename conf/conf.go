@@ -93,8 +93,8 @@ func LoadConfig() Config {
 
 	// Default configuration
 	conf := Config{
-		MenuBgColor:           "yellow",
-		MenuSelectedColor:     "red",
+		MenuBgColor:           "#4682B4",
+		MenuSelectedColor:     "#A0522D",
 		MenuTextColor:         "black",
 		MenuDisabledColor:     "gray",
 		ShowWelcomePopup:      true,

@@ -65,30 +65,23 @@ func Xeq(c string) {
 
 			// Write header to file
 			fmt.Fprintf(fOut, "%s ⯈ %s\n", time.Now().Format("20060102-150405"), c)
-			outPrefix := ""
-			errPrefix := ""
-			/* 			if conf.ConfigGeneral.OutErrPrefix {
-			   				outPrefix = "OUT : "
-			   				errPrefix = "ERR : "
-			   			}
-			*/
 			for {
 				select {
 				case line, open := <-xCmd.Stdout:
 					if !open {
 						xCmd.Stdout = nil
 					} else {
-						fmt.Fprintln(fOut, outPrefix+line)
+						fmt.Fprintln(fOut, line)
 					}
 				case line, open := <-xCmd.Stderr:
 					if !open {
 						xCmd.Stderr = nil
 					} else {
-						fmt.Fprintln(fOut, errPrefix+line)
+						fmt.Fprintln(fOut, line)
 					}
 				case status := <-statusChan:
 					// Command finished!
-					fmt.Fprintln(fOut, fmt.Sprintf("%s ⯈ Done [%s] Exit Code: %d\n", time.Now().Format("20060102-150405"), c, status.Exit))
+					fmt.Fprintf(fOut, "%s ⯈ Done [%s] Exit Code: %d\n", time.Now().Format("20060102-150405"), c, status.Exit)
 					app.QueueUpdateDraw(func() {
 						SetStatus(fmt.Sprintf("Done [%s] Exit Code: %d", c, status.Exit))
 					})

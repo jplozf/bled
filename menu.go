@@ -531,7 +531,7 @@ func (m *AppMenuBar) ShowMenuPopup(title string, entries []MenuEntry) {
 		e := &entries[i]
 		idx := i
 
-		displayLabel := "  " + e.Label
+		displayLabel := "  " + e.Label + strings.Repeat(" ", maxLabelWidth-len(e.Label))
 		if len(e.SubEntries) > 0 {
 			displayLabel += " ⯈"
 		}

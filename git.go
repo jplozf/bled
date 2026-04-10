@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // ****************************************************************************
@@ -429,7 +430,11 @@ func DoGitCommit() {
 			"",                            // Default value
 			func(rc DlgButton, idx int) {
 				if rc == BUTTON_OK {
-					out := fmt.Sprintf("Committing...\n%s", XeqOut("git commit -a -m \""+DlgInputBox.Value+"\""))
+					msg := DlgInputBox.Value
+					if msg == "" {
+						msg = fmt.Sprintf("Commited on %s", time.Now().Format("09-07-2017 17:06:06"))
+					}
+					out := fmt.Sprintf("Committing...\n%s", XeqOut("git commit -a -m "+msg))
 					MsgBox = MsgBox.OK("Git Commit", out, nil, 0, "main", editor)
 					pages.AddPage("msgBox", MsgBox.Popup(), true, false)
 					pages.ShowPage("msgBox")
