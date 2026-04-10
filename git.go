@@ -332,7 +332,11 @@ func DoGitCommitPush() {
 			"",                            // Default value
 			func(rc DlgButton, idx int) {
 				if rc == BUTTON_OK {
-					out := fmt.Sprintf("Committing...\n%s", XeqOut("git commit -a -m \""+DlgInputBox.Value+"\""))
+					msg := DlgInputBox.Value
+					if msg == "" {
+						msg = fmt.Sprintf("Commited on %s", time.Now().Format("09-07-2017 17:06:06"))
+					}
+					out := fmt.Sprintf("Committing...\n%s", XeqOut("git commit -a -m "+msg))
 					branch := XeqRaw("git rev-parse --abbrev-ref HEAD")
 					out += fmt.Sprintf("\n\nPushing...\n%s", XeqOut("git push origin "+branch))
 
