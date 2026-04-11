@@ -336,9 +336,10 @@ func DoGitCommitPush() {
 					if msg == "" {
 						msg = fmt.Sprintf("Commited on %s", time.Now().Format("09-07-2017 17:06:06"))
 					}
-					out := fmt.Sprintf("Committing...\n%s", XeqOut("git commit -a -m "+msg))
+					env := []string{"GIT_AUTHOR_NAME=" + config.GithubUser, "GIT_AUTHOR_EMAIL=" + config.GithubEmail, "GIT_COMMITTER_NAME=" + config.GithubUser, "GIT_COMMITTER_EMAIL=" + config.GithubEmail, "GIT_TERMINAL_PROMPT=0"}
+					out := fmt.Sprintf("Committing...\n%s", XeqOutEnv("git commit -a -m \""+msg+"\"", env))
 					branch := XeqRaw("git rev-parse --abbrev-ref HEAD")
-					out += fmt.Sprintf("\n\nPushing...\n%s", XeqOut("git push origin "+branch))
+					out += fmt.Sprintf("\n\nPushing...\n%s", XeqOutEnv("git push origin "+branch, env))
 
 					MsgBox = MsgBox.OK("Git Commit & Push", out, nil, 0, "main", editor)
 					pages.AddPage("msgBox", MsgBox.Popup(), true, false)
@@ -415,7 +416,8 @@ func DoGitPull() {
 func DoGitPush() {
 	if IsInsideGitWorkTree() {
 		branch := XeqRaw("git rev-parse --abbrev-ref HEAD")
-		out := fmt.Sprintf("Pushing...\n%s", XeqOut("git push origin "+branch))
+		env := []string{"GIT_AUTHOR_NAME=" + config.GithubUser, "GIT_AUTHOR_EMAIL=" + config.GithubEmail, "GIT_COMMITTER_NAME=" + config.GithubUser, "GIT_COMMITTER_EMAIL=" + config.GithubEmail, "GIT_TERMINAL_PROMPT=0"}
+		out := fmt.Sprintf("Pushing...\n%s", XeqOutEnv("git push origin "+branch, env))
 		MsgBox = MsgBox.OK("Git Push", out, nil, 0, "main", editor)
 		pages.AddPage("msgBox", MsgBox.Popup(), true, false)
 		pages.ShowPage("msgBox")
@@ -438,7 +440,8 @@ func DoGitCommit() {
 					if msg == "" {
 						msg = fmt.Sprintf("Commited on %s", time.Now().Format("09-07-2017 17:06:06"))
 					}
-					out := fmt.Sprintf("Committing...\n%s", XeqOut("git commit -a -m "+msg))
+					env := []string{"GIT_AUTHOR_NAME=" + config.GithubUser, "GIT_AUTHOR_EMAIL=" + config.GithubEmail, "GIT_COMMITTER_NAME=" + config.GithubUser, "GIT_COMMITTER_EMAIL=" + config.GithubEmail, "GIT_TERMINAL_PROMPT=0"}
+					out := fmt.Sprintf("Committing...\n%s", XeqOutEnv("git commit -a -m \""+msg+"\"", env))
 					MsgBox = MsgBox.OK("Git Commit", out, nil, 0, "main", editor)
 					pages.AddPage("msgBox", MsgBox.Popup(), true, false)
 					pages.ShowPage("msgBox")

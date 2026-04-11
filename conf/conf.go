@@ -45,6 +45,7 @@ type Config struct {
 	Theme                 string `json:"theme"`
 	GithubUser            string `json:"github_user"`
 	GithubKey             string `json:"github_key"`
+	GithubEmail           string `json:"github_email"`
 }
 
 // ****************************************************************************
@@ -105,6 +106,7 @@ func LoadConfig() Config {
 		Theme:                 "monokai",
 		GithubUser:            "github_user",
 		GithubKey:             "github_key",
+		GithubEmail:           "github_email",
 	}
 
 	data, err := os.ReadFile(path)
