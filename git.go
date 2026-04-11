@@ -351,6 +351,7 @@ func DoGitCommitPush() {
 					MsgBox = MsgBox.OK("Git Commit & Push", out, nil, 0, "main", editor)
 					pages.AddPage("msgBox", MsgBox.Popup(), true, false)
 					pages.ShowPage("msgBox")
+					refreshDocument()
 				} else {
 					SetStatus("Aborting Git Commit & Push")
 				}
@@ -434,6 +435,7 @@ func DoGitPush() {
 		MsgBox = MsgBox.OK("Git Push", out, nil, 0, "main", editor)
 		pages.AddPage("msgBox", MsgBox.Popup(), true, false)
 		pages.ShowPage("msgBox")
+		refreshDocument()
 	} else {
 		SetStatus("No Git repository found")
 	}

@@ -177,27 +177,21 @@ func (m *AppMenuBar) AddMenu(title string, entries []MenuEntry) *AppMenuBar {
 // rebuildBar()
 // ****************************************************************************
 func (m *AppMenuBar) rebuildBar() {
-	// 1. On vide complètement le Flex
 	m.Clear()
 
-	// 2. On ajoute tous les boutons de menu (à gauche)
 	for _, btn := range m.buttons {
-		// On calcule la largeur selon le texte du bouton + padding
 		width := len(btn.GetLabel()) + 2
 		m.AddItem(btn, width, 0, false)
 	}
 
-	// 3. On ajoute le spacer (il prend tout l'espace restant : poids 1)
 	if m.spacer == nil {
 		m.spacer = tview.NewBox().SetBackgroundColor(conf.GetColor(config.MenuBgColor))
 	}
 	m.AddItem(m.spacer, 0, 1, false)
 
-	// 4. On ajoute la version (à droite)
 	if m.versionView != nil {
-		// On récupère le texte brut pour calculer la largeur sans les tags [color]
-		m.versionView.SetText(GITInfos + " ")       // Assure que le texte est à jour
-		versionText := m.versionView.GetText(false) // false pour obtenir le texte sans les tags de couleur
+		m.versionView.SetText(GITInfos + " ")
+		versionText := m.versionView.GetText(false)
 		m.AddItem(m.versionView, len(versionText)+1, 0, false)
 	}
 }
