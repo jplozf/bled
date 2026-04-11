@@ -477,6 +477,9 @@ func (m *Dialog) selectPath(text string, index int) {
 // setUI() for the dialog
 // ****************************************************************************
 func (m *Dialog) setUI() {
+	if m.title[0:1] != " " {
+		m.title = " " + m.title + " "
+	}
 	m.SetTitle(m.title)
 	switch m.dtype {
 	case INPUT_TEXT:
