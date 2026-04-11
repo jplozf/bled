@@ -29,6 +29,7 @@ const (
 	NEW_FILE_TEMPLATE = "noname_"
 	FILE_CONFIG       = "config.json"
 	FILE_LOG          = "bled.log"
+	FILE_MACROS       = "macros"
 	FILE_MRU          = "mru"
 )
 
@@ -84,6 +85,25 @@ func GetLogPath() string {
 	}
 
 	return filepath.Join(logDir, FILE_LOG)
+}
+
+// ****************************************************************************
+// GetMacrosPath()
+// ****************************************************************************
+func GetMacrosPath() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return FILE_MACROS // Fallback
+	}
+
+	macrosDir := filepath.Join(home, APP_FOLDER)
+
+	err = os.MkdirAll(macrosDir, 0755)
+	if err != nil {
+		return FILE_MACROS // Fallback
+	}
+
+	return filepath.Join(macrosDir, FILE_MACROS)
 }
 
 // ****************************************************************************
