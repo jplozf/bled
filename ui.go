@@ -35,6 +35,7 @@ var (
 	editEntries                                                          []MenuEntry
 	helpEntries                                                          []MenuEntry
 	gitEntries                                                           []MenuEntry
+	macroEntries                                                         []MenuEntry
 	editor                                                               *femto.View
 	config                                                               conf.Config
 	MsgBox                                                               *Dialog
@@ -211,12 +212,15 @@ func setUI() {
 		{Label: "Clone", Action: func() { DoGitClone() }},
 	}
 
+	refreshMacrosMenu()
+
 	editEntries = []MenuEntry{
 		{Label: "Goto", Action: func() { toggleGotoPanel(true) }, Shortcut: tcell.KeyCtrlG},
 		{Label: "Find & Replace", Action: func() {
 			toggleSearchPanel(true)
 		}, Shortcut: tcell.KeyCtrlF},
 		{Label: "Git Tracking", SubEntries: gitEntries, Action: func() { menuBar.ShowMenuPopup("Git Tracking", gitEntries) }, Shortcut: tcell.KeyF3},
+		{Label: "Macros", SubEntries: macroEntries, Action: func() { menuBar.ShowMenuPopup("Macros", macroEntries) }},
 	}
 	menuBar.AddMenu(" Edit ", editEntries)
 

@@ -115,6 +115,18 @@ func replaceVariablesInMacro(k string) string {
 // ****************************************************************************
 // editMacrosFile()
 // ****************************************************************************
-func editMacrosFile(f any) {
+func editMacrosFile() {
 	openFile(conf.GetMacrosPath(), false)
+}
+
+// ****************************************************************************
+// refreshMacrosMenu()
+// ****************************************************************************
+func refreshMacrosMenu() {
+	ReadMacros()
+	macroEntries = nil
+	for k := range Macros {
+		macroEntries = append(macroEntries, MenuEntry{Label: k, Action: func() { XeqMacro(k) }})
+	}
+	macroEntries = append(macroEntries, MenuEntry{Label: "Edit macros file", Action: func() { editMacrosFile() }})
 }

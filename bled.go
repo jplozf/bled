@@ -63,6 +63,7 @@ var GitVersion = "dev"
 func main() {
 	// Setup the UI components
 	GITInfos = fmt.Sprintf("%s %s %s", conf.APP_ICON, conf.APP_NAME, getFullVersion())
+	Macros = make(map[string]string)
 	setUI()
 
 	// Global input capture for shortcuts and focus management
@@ -254,6 +255,7 @@ func safeQuit() {
 // terminateApp()
 // ****************************************************************************
 func terminateApp() {
+	SaveMacros()
 	app.Stop()
 	fmt.Printf("%s %s v%s - %s\n", conf.APP_ICON, conf.APP_NAME, getFullVersion(), conf.APP_URL)
 }

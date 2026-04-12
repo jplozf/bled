@@ -61,6 +61,20 @@ color_accent            : Accent color used in the UI (e.g. for highlights)
 theme                   : Theme name (see below for available themes)
 github_user             : User name used for Github commits
 github_key              : Key used for Github operations
+github_email            : Email used for Github commits
+
+Here is the default configuration file content, which is generated at first launch if not already present in the user's home directory :	
+{                                                                                                                                
+    "menu_bg_color": "#4682B4",                                                                                                  
+    "menu_selected_color": "#A0522D",                                                                                            
+    "menu_text_color": "black",                                                                                                  
+    "menu_disabled_color": "gray",                                                                                               
+    "show_welcome_popup": true,                                                                                                 
+    "confirm_on_quit": true,                                                                                                     
+    "theme": "monokai"                                                                               
+}                                                                                                                                
+Don't forget to edit the "github_user", "github_key" and "github_email" fields if you want to use the GitHub integration features of Bled.
+
 
 ⯈ Available themes are as follows (theme names are case-sensitive) :
 
@@ -83,6 +97,22 @@ solarized-tc
 solarized
 twilight
 zenburn
+
+⯈ Macros are also supported in Bled, and can be used to access and launch common pre-defined tasks :
+
+Macros are stored in a separate file, as a simple text file located in the user's home directory.
+The macros file is generated at first launch if not already present, and contains some placeholders that can be used to create powerful macros.
+Here are the available placeholders that can be used in macros :
+
+%D : Full directory of current file
+%P : Parent directory of current file
+%F : Full file name with directory and extension of current file
+%f : File name without path and with extension of current file
+%e : File name without path nor extension of current file
+%L : Line number of current file in editor
+%T : Current timestamp
+%H : Home directory of current user
+%s : OS path separator
 
 `
 
