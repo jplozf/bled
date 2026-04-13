@@ -593,10 +593,13 @@ func checkUpdate() {
 		return
 	}
 
-	if GitVersion != "dev" && !strings.EqualFold(remoteHash, GitVersion[len(GitVersion)-7:]) {
-		msg := fmt.Sprintf("an update is available : %s.%s.%s\n\nVisit the GitHub repository :\n%s", MAJOR, remoteHash, time.Now().Format("20060102"), conf.APP_URL)
-		MsgBox = MsgBox.Info("Update available", msg, nil, 0, "main", editor)
-		pages.AddPage("msgNewVersion", MsgBox.Popup(), true, false)
-		pages.ShowPage("msgNewVersion")
+	if GitVersion != "dev" {
+		localHash := GitVersion[len(GitVersion)-7:]
+		if !strings.EqualFold(remoteHash, localHash) {
+			msg := fmt.Sprintf("An update is available : %s vs %s\n\nVisit the GitHub repository :\n%s", remoteHash, localHash, conf.APP_URL)
+			MsgBox = MsgBox.Info("Update available", msg, nil, 0, "main", editor)
+			pages.AddPage("msgNewVersion", MsgBox.Popup(), true, false)
+			pages.ShowPage("msgNewVersion")
+		}
 	}
 }
