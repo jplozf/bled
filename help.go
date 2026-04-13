@@ -22,8 +22,8 @@ pgavlin/femto : An editor component for tview. Derived from the micro editor.
 
 F1  : This help text
 F3  : Jump to the "Git Tracking" menu
-F5  : Jump to the "Find & Replace" panel
 F4  : Jump to the next match of the current search query
+F5  : Jump to the "Macros" menu
 F6  : Switch to the previous open file
 F7  : Switch to the next open file
 F10 : Access to the main menu of Bled

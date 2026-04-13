@@ -187,49 +187,7 @@ func setUI() {
 
 	// MENUS
 	menuBar = NewAppMenuBar(app, pages)
-
-	fileMenu = []MenuEntry{
-		{Label: "New", Action: func() { newFile() }, Shortcut: tcell.KeyCtrlN},
-		{Label: "Open", Action: func() { InputFileOpen() }, Shortcut: tcell.KeyCtrlO},
-		{Label: "Save", Disabled: true, Action: func() { saveFile() }, Shortcut: tcell.KeyCtrlS},
-		{Label: "Save as", Action: func() { SaveFileAs() }},
-		{Label: "Close", Action: func() { closeCurrentFile() }, Shortcut: tcell.KeyCtrlT},
-		{Label: "Quit", Shortcut: tcell.KeyCtrlQ, Action: func() { safeQuit() }},
-	}
-	menuBar.AddMenu(" File ", fileMenu)
-
-	gitEntries = []MenuEntry{
-		{Label: "Status", Action: func() { DoGitStatus() }},
-		{Label: "Log", Action: func() { DoGitLog() }},
-		{Label: "Add all (.)", Action: func() { DoGitAddAll() }},
-		{Label: "Commit", Action: func() { DoGitCommit() }},
-		{Label: "Push", Action: func() { DoGitPush() }},
-		{Label: "Commit & Push", Action: func() { DoGitCommitPush() }},
-		{Label: "Fetch", Action: func() { DoGitFetch() }},
-		{Label: "Pull (Fetch & Merge)", Action: func() { DoGitPull() }},
-		{Label: "Initialize", Action: func() { DoGitInit() }},
-		{Label: "Initialize & Push", Action: func() { DoGitBang() }},
-		{Label: "Clone", Action: func() { DoGitClone() }},
-	}
-
-	refreshMacrosMenu()
-
-	editEntries = []MenuEntry{
-		{Label: "Goto", Action: func() { toggleGotoPanel(true) }, Shortcut: tcell.KeyCtrlG},
-		{Label: "Find & Replace", Action: func() {
-			toggleSearchPanel(true)
-		}, Shortcut: tcell.KeyCtrlF},
-		{Label: "Git Tracking", SubEntries: gitEntries, Action: func() { menuBar.ShowMenuPopup("Git Tracking", gitEntries) }, Shortcut: tcell.KeyF3},
-		{Label: "Macros", SubEntries: macroEntries, Action: func() { menuBar.ShowMenuPopup("Macros", macroEntries) }},
-	}
-	menuBar.AddMenu(" Edit ", editEntries)
-
-	helpEntries = []MenuEntry{
-		{Label: "Manual", Action: func() { ShowManual() }, Shortcut: tcell.KeyF1},
-		{Label: "About", Action: func() { ShowWelcomePopup() }},
-		{Label: "Settings", Action: func() { openSettings() }},
-	}
-	menuBar.AddMenu(" Help ", helpEntries)
+	setMenuUI()
 
 	// STATUS BAR COMPONENTS
 	statusFilePos = tview.NewTextView().SetDynamicColors(true)
@@ -438,4 +396,52 @@ func refreshFileMenu() {
 		})
 	}
 	menuBar.UpdateMenu(" File ", fileMenu)
+}
+
+// ****************************************************************************
+// setMenuUI()
+// ****************************************************************************
+func setMenuUI() {
+	fileMenu = []MenuEntry{
+		{Label: "New", Action: func() { newFile() }, Shortcut: tcell.KeyCtrlN},
+		{Label: "Open", Action: func() { InputFileOpen() }, Shortcut: tcell.KeyCtrlO},
+		{Label: "Save", Disabled: true, Action: func() { saveFile() }, Shortcut: tcell.KeyCtrlS},
+		{Label: "Save as", Action: func() { SaveFileAs() }},
+		{Label: "Close", Action: func() { closeCurrentFile() }, Shortcut: tcell.KeyCtrlT},
+		{Label: "Quit", Shortcut: tcell.KeyCtrlQ, Action: func() { safeQuit() }},
+	}
+	menuBar.AddMenu(" File ", fileMenu)
+
+	gitEntries = []MenuEntry{
+		{Label: "Status", Action: func() { DoGitStatus() }},
+		{Label: "Log", Action: func() { DoGitLog() }},
+		{Label: "Add all (.)", Action: func() { DoGitAddAll() }},
+		{Label: "Commit", Action: func() { DoGitCommit() }},
+		{Label: "Push", Action: func() { DoGitPush() }},
+		{Label: "Commit & Push", Action: func() { DoGitCommitPush() }},
+		{Label: "Fetch", Action: func() { DoGitFetch() }},
+		{Label: "Pull (Fetch & Merge)", Action: func() { DoGitPull() }},
+		{Label: "Initialize", Action: func() { DoGitInit() }},
+		{Label: "Initialize & Push", Action: func() { DoGitBang() }},
+		{Label: "Clone", Action: func() { DoGitClone() }},
+	}
+
+	refreshMacrosMenu()
+
+	editEntries = []MenuEntry{
+		{Label: "Goto", Action: func() { toggleGotoPanel(true) }, Shortcut: tcell.KeyCtrlG},
+		{Label: "Find & Replace", Action: func() {
+			toggleSearchPanel(true)
+		}, Shortcut: tcell.KeyCtrlF},
+		{Label: "Git Tracking", SubEntries: gitEntries, Action: func() { menuBar.ShowMenuPopup("Git Tracking", gitEntries) }, Shortcut: tcell.KeyF3},
+		{Label: "Macros", SubEntries: macroEntries, Action: func() { menuBar.ShowMenuPopup("Macros", macroEntries) }, Shortcut: tcell.KeyF5},
+	}
+	menuBar.AddMenu(" Edit ", editEntries)
+
+	helpEntries = []MenuEntry{
+		{Label: "Manual", Action: func() { ShowManual() }, Shortcut: tcell.KeyF1},
+		{Label: "About", Action: func() { ShowWelcomePopup() }},
+		{Label: "Settings", Action: func() { openSettings() }},
+	}
+	menuBar.AddMenu(" Help ", helpEntries)
 }

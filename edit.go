@@ -181,6 +181,11 @@ func saveFile() {
 
 	CurrentFile.FemtoBuffer.IsModified = false // Set the buffer as not modified after saving
 	SetStatus(fmt.Sprintf("File saved : %s", filepath.Base(CurrentFile.FName)))
+	if CurrentFile.FName == conf.GetMacrosPath() {
+		SetStatus("Refreshing macros menu")
+		refreshMacrosMenu()
+		setMenuUI()
+	}
 }
 
 // ****************************************************************************

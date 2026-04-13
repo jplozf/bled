@@ -5,8 +5,10 @@ import (
 	"bled/utils"
 	"bufio"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -125,7 +127,8 @@ func editMacrosFile() {
 func refreshMacrosMenu() {
 	ReadMacros()
 	macroEntries = nil
-	for k := range Macros {
+	sortedMacros := slices.Sorted(maps.Keys(Macros))
+	for _, k := range sortedMacros {
 		macroEntries = append(macroEntries, MenuEntry{Label: k, Action: func() { XeqMacro(k) }})
 	}
 	macroEntries = append(macroEntries, MenuEntry{Label: "Edit macros file", Action: func() { editMacrosFile() }})

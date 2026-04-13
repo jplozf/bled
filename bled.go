@@ -16,6 +16,7 @@ package main
 // ****************************************************************************
 import (
 	"bled/conf"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -23,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/pgavlin/femto"
@@ -65,6 +67,7 @@ func main() {
 	GITInfos = fmt.Sprintf("%s %s %s", conf.APP_ICON, conf.APP_NAME, getFullVersion())
 	Macros = make(map[string]string)
 	setUI()
+	go checkUpdate()
 
 	// Global input capture for shortcuts and focus management
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -552,4 +555,48 @@ func confirmQuitOnly() {
 
 	pages.AddPage("dlgConfirm", DlgQuit.Popup(), true, false)
 	pages.ShowPage("dlgConfirm")
+}
+
+// ****************************************************************************
+// getRemoteHash()
+// ****************************************************************************
+func getRemoteHash() (string, error) {
+	client := &http.Client{Timeout: 5 * time.Second}
+	url := "https://api.github.com/repos/jplozf/Bled/commits/main"
+
+	resp, err := client.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Sha string `json:"sha"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", err
+	}
+
+	if len(result.Sha) > 7 {
+		return result.Sha[:7], nil
+	}
+	return result.Sha, nil
+}
+
+// ****************************************************************************
+// checkUpdate()
+// ****************************************************************************
+func checkUpdate() {
+	remoteHash, err := getRemoteHash()
+	if err != nil {
+		return
+	}
+
+	if GitVersion != "dev" && !strings.EqualFold(remoteHash, GitVersion[len(GitVersion)-7:]) {
+		msg := fmt.Sprintf("an update is available : %s.%s.%s\n\nVisit the GitHub repository :\n%s", MAJOR, remoteHash, time.Now().Format("20060102"), conf.APP_URL)
+		MsgBox = MsgBox.Info("Update available", msg, nil, 0, "main", editor)
+		pages.AddPage("msgNewVersion", MsgBox.Popup(), true, false)
+		pages.ShowPage("msgNewVersion")
+	}
 }
