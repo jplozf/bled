@@ -376,6 +376,7 @@ func refreshFileMenu() {
 		{Label: "Save as", Action: func() { SaveFileAs() }},
 		{Label: "Close", Action: func() { closeCurrentFile() }, Shortcut: tcell.KeyCtrlT},
 		{Label: "Quit", Shortcut: tcell.KeyCtrlQ, Action: func() { safeQuit() }},
+		{IsSeparator: true},
 	}
 
 	for i, f := range efiles {
@@ -409,6 +410,7 @@ func setMenuUI() {
 		{Label: "Save as", Action: func() { SaveFileAs() }},
 		{Label: "Close", Action: func() { closeCurrentFile() }, Shortcut: tcell.KeyCtrlT},
 		{Label: "Quit", Shortcut: tcell.KeyCtrlQ, Action: func() { safeQuit() }},
+		{IsSeparator: true},
 	}
 	menuBar.AddMenu(" File ", fileMenu)
 

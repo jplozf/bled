@@ -294,6 +294,12 @@ func (m *Dialog) FileBrowser(title string, path string, done func(rc DlgButton, 
 	m.UIList.SetLabel("Browse  :")
 	m.UIList.SetOptions([]string{}, nil)
 	// m.UIList.SetSelectedFunc(m.selectPath)
+	m.UIList.SetFieldBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
+	m.UIList.SetFieldTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.UIList.SetListStyles(
+		tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuBgColor)).Foreground(conf.GetColor(conf.LoadConfig().MenuTextColor)), // Style normal
+		tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuSelectedColor)).Foreground(tcell.ColorWhite),                         // Style sélectionné
+	)
 
 	m.SetButtonsAlign(tview.AlignCenter)
 	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
@@ -331,6 +337,12 @@ func (m *Dialog) DeleteFileBrowser(title string, path string, done func(rc DlgBu
 	m.UIList.SetLabel("Browse  :")
 	m.UIList.SetOptions([]string{}, nil)
 	// m.UIList.SetSelectedFunc(m.selectPath)
+	m.UIList.SetFieldBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
+	m.UIList.SetFieldTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.UIList.SetListStyles(
+		tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuBgColor)).Foreground(conf.GetColor(conf.LoadConfig().MenuTextColor)),
+		tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuSelectedColor)).Foreground(tcell.ColorWhite),
+	)
 
 	m.SetButtonsAlign(tview.AlignCenter)
 	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
@@ -387,7 +399,7 @@ func (m *Dialog) setPath(option string, optionIndex int) {
 			if v.Type()&os.ModeSymlink != 0 {
 				entryName = fmt.Sprintf("[yellow]%s[white]", v.Name())
 			} else if v.IsDir() {
-				entryName = fmt.Sprintf("[%s]%s[white]", config.ColorAccent, v.Name())
+				entryName = fmt.Sprintf("[%s]%s[white]", conf.GetColor(conf.LoadConfig().MenuSelectedColor), v.Name())
 			} else {
 				entryName = v.Name()
 			}

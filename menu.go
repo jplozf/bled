@@ -34,6 +34,7 @@ type MenuEntry struct {
 	Disabled    bool
 	IsCheckable bool
 	Checked     bool
+	IsSeparator bool
 }
 
 type AppMenuBar struct {
@@ -264,6 +265,13 @@ func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string
 	for i := range entries {
 		e := &entries[i]
 		idx := i // Capture de l'index pour le closure
+
+		if e.IsSeparator {
+			sepLine := " " + strings.Repeat("-", listWidth-2) + " "
+			list.AddItem(sepLine, "", 0, nil)
+			continue
+		}
+
 		label := e.Label
 
 		prefix := "  "
@@ -314,6 +322,24 @@ func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string
 		entry := entries[currIdx]
 
 		switch event.Key() {
+		case tcell.KeyDown:
+			nextIdx := currIdx + 1
+			if nextIdx < list.GetItemCount() && entries[nextIdx].IsSeparator {
+				if nextIdx+1 < list.GetItemCount() {
+					list.SetCurrentItem(nextIdx + 1)
+					return nil
+				}
+			}
+
+		case tcell.KeyUp:
+			prevIdx := currIdx - 1
+			if prevIdx >= 0 && entries[prevIdx].IsSeparator {
+				if prevIdx-1 >= 0 {
+					list.SetCurrentItem(prevIdx - 1)
+					return nil
+				}
+			}
+
 		case tcell.KeyRight:
 			// Ouvrir le sous-menu si présent
 			if len(entry.SubEntries) > 0 {
@@ -451,6 +477,12 @@ func (m *AppMenuBar) ShowMenuPopup(title string, entries []MenuEntry) {
 		e := &entries[i]
 		idx := i
 
+		if e.IsSeparator {
+			sepLine := " " + strings.Repeat("-", listWidth-2) + " "
+			list.AddItem(sepLine, "", 0, nil)
+			continue
+		}
+
 		displayLabel := "  " + e.Label + strings.Repeat(" ", maxLabelWidth-len(e.Label))
 		if len(e.SubEntries) > 0 {
 			displayLabel += " ⯈"
@@ -475,7 +507,27 @@ func (m *AppMenuBar) ShowMenuPopup(title string, entries []MenuEntry) {
 
 	// Capture clavier pour quitter ou naviguer
 	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEsc {
+		currIdx := list.GetCurrentItem()
+		switch event.Key() {
+		case tcell.KeyDown:
+			nextIdx := currIdx + 1
+			if nextIdx < list.GetItemCount() && entries[nextIdx].IsSeparator {
+				if nextIdx+1 < list.GetItemCount() {
+					list.SetCurrentItem(nextIdx + 1)
+					return nil
+				}
+			}
+
+		case tcell.KeyUp:
+			prevIdx := currIdx - 1
+			if prevIdx >= 0 && entries[prevIdx].IsSeparator {
+				if prevIdx-1 >= 0 {
+					list.SetCurrentItem(prevIdx - 1)
+					return nil
+				}
+			}
+
+		case tcell.KeyEsc:
 			m.closeAllMenus()
 			return nil
 		}

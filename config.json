@@ -1,0 +1,6 @@
+{
+    "menu_bg_color": "yellow",
+    "menu_selected_color": "red",
+    "menu_text_color": "black",
+    "menu_disabled_color": "gray"
+}

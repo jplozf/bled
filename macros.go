@@ -131,5 +131,6 @@ func refreshMacrosMenu() {
 	for _, k := range sortedMacros {
 		macroEntries = append(macroEntries, MenuEntry{Label: k, Action: func() { XeqMacro(k) }})
 	}
+	macroEntries = append(macroEntries, MenuEntry{IsSeparator: true})
 	macroEntries = append(macroEntries, MenuEntry{Label: "Edit macros file", Action: func() { editMacrosFile() }})
 }
