@@ -6,10 +6,12 @@ package main
 import (
 	"bled/conf"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pgavlin/femto"
 )
@@ -18,12 +20,14 @@ import (
 // TYPES
 // ****************************************************************************
 type efile struct {
-	FemtoBuffer *femto.Buffer
-	FemtoView   *femto.View
-	FName       string
-	Encoding    string
-	Modified    bool
-	ReadOnly    bool
+	FemtoBuffer   *femto.Buffer
+	FemtoView     *femto.View
+	FName         string
+	Encoding      string
+	Modified      bool
+	ReadOnly      bool
+	FollowMode    bool
+	LastKnownSize int64
 }
 
 // ****************************************************************************
@@ -49,6 +53,7 @@ func openFile(filename string, readOnly bool) {
 	var newBuf *femto.Buffer
 
 	content, err := os.ReadFile(filename)
+	var fileSize int64
 	if err != nil {
 		SetStatus(fmt.Sprintf("Could not read %v", filename))
 		newBuf = femto.NewBufferFromString(string(""), filename)
@@ -60,6 +65,7 @@ func openFile(filename string, readOnly bool) {
 			filename = filename + ".txt"
 			newBuf = femto.NewBufferFromString(string(""), filename)
 		} else {
+			fileSize = int64(len(content))
 			newBuf = femto.NewBufferFromString(string(content), filename)
 		}
 	}
@@ -81,12 +87,13 @@ func openFile(filename string, readOnly bool) {
 	newView = femto.NewView(newBuf)
 
 	newEFile := &efile{
-		FemtoBuffer: newBuf,
-		FName:       filename,
-		FemtoView:   newView,
-		Encoding:    "UTF-8",
-		Modified:    false,
-		ReadOnly:    readOnly,
+		FemtoBuffer:   newBuf,
+		FName:         filename,
+		FemtoView:     newView,
+		Encoding:      "UTF-8",
+		Modified:      false,
+		ReadOnly:      readOnly,
+		LastKnownSize: fileSize,
 	}
 	efiles = append(efiles, newEFile)
 	switchDocument(len(efiles) - 1)
@@ -290,12 +297,12 @@ func prevFile() {
 // gotoLocation()
 // ****************************************************************************
 func gotoLocation(input string) {
-	if CurrentFile == nil || CurrentFile.FemtoView == nil {
+	if CurrentFile == nil {
 		return
 	}
 
 	buf := CurrentFile.FemtoBuffer
-	view := CurrentFile.FemtoView
+	view := editor
 	var targetLine int
 	totalLines := buf.NumLines
 
@@ -303,6 +310,9 @@ func gotoLocation(input string) {
 	input = strings.ToLower(strings.TrimSpace(input))
 
 	switch {
+	case input == "follow" || input == "$":
+		CurrentFile.StartFollowMode()
+		return
 	case input == "top" || input == "start":
 		targetLine = 0
 
@@ -354,8 +364,8 @@ func gotoLocation(input string) {
 	var loc femto.Loc
 	loc.X = 0
 	loc.Y = targetLine
-	CurrentFile.FemtoBuffer.Cursor.GotoLoc(loc)
-	editor.OpenBuffer(CurrentFile.FemtoBuffer)
+	editor.Cursor.GotoLoc(loc)
+	editor.Center()
 	SetStatus(fmt.Sprintf("Go to line %d on %d", targetLine+1, totalLines))
 }
 
@@ -565,4 +575,67 @@ func replaceAll() {
 	}
 	SetStatus("All occurrence(s) replaced")
 	// SetStatus(fmt.Sprintf("All %d occurrence(s) replaced", count))
+}
+
+// ****************************************************************************
+// StartFollowMode()
+// ****************************************************************************
+func (m *efile) StartFollowMode() {
+	m.FollowMode = true
+	// Ensure we have the latest size before starting
+	if info, err := os.Stat(m.FName); err == nil {
+		m.LastKnownSize = info.Size()
+	}
+
+	SetStatus("Follow Mode: ON (Press any key to stop)")
+	gotoLocation("end")
+
+	go func() {
+		for m.FollowMode {
+			info, err := os.Stat(m.FName)
+			if err != nil {
+				time.Sleep(500 * time.Millisecond)
+				continue
+			}
+
+			if info.Size() > m.LastKnownSize {
+				// File has grown: append only the new content
+				f, err := os.Open(m.FName)
+				if err == nil {
+					f.Seek(m.LastKnownSize, 0)
+					newBytes, err := io.ReadAll(f)
+					f.Close()
+					if err == nil && len(newBytes) > 0 {
+						m.LastKnownSize = info.Size()
+						app.QueueUpdateDraw(func() {
+							if !m.FollowMode {
+								return
+							}
+							m.FemtoBuffer.Insert(m.FemtoBuffer.End(), string(newBytes))
+							m.FemtoBuffer.IsModified = false
+							if CurrentFile == m {
+								gotoLocation("end")
+							}
+						})
+					}
+				}
+			} else if info.Size() < m.LastKnownSize {
+				// File was truncated or rotated: reload everything
+				if content, err := os.ReadFile(m.FName); err == nil {
+					m.LastKnownSize = info.Size()
+					app.QueueUpdateDraw(func() {
+						if !m.FollowMode {
+							return
+						}
+						m.FemtoBuffer.Replace(m.FemtoBuffer.Start(), m.FemtoBuffer.End(), string(content))
+						m.FemtoBuffer.IsModified = false
+						if CurrentFile == m {
+							gotoLocation("end")
+						}
+					})
+				}
+			}
+			time.Sleep(500 * time.Millisecond)
+		}
+	}()
 }

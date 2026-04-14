@@ -126,11 +126,16 @@ func main() {
 		default:
 			return event
 		}
-		return event
 	})
 
 	// Editor keyboard's events manager
 	editor.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if CurrentFile != nil && CurrentFile.FollowMode {
+			CurrentFile.FollowMode = false
+			SetStatus("Follow Mode: OFF")
+			return nil
+		}
+
 		if CurrentFile != nil && CurrentFile.ReadOnly {
 			// Only allow navigation keys and some basic actions in read-only mode
 			switch event.Key() {
@@ -151,7 +156,7 @@ func main() {
 
 			if isSoft {
 				// SOFT TABS : insert spaces instead of a tab character
-				for range width {
+				for i := 0; i < width; i++ {
 					CurrentFile.FemtoView.InsertSpace()
 				}
 				return nil

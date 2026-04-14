@@ -47,6 +47,18 @@ CTRL + V : Paste the selection
 CTRL + Z : Cancels the previous entry 
 CTRL + Y : Redo the previous cancelled operation
 
+⯈ The "Goto" panel, reachable via CTRL + G, supports the following functions :
+
+<line>             : Jump to a specific line number in the current document
+<percentage%>      : Jump to a specific percentage of the document (e.g. 50% will jump to the middle of the document)
+<+line> or <-line> : Jump to a specific line number relative to the current line (e.g. +10 will jump 10 lines down, -5 will jump 5 lines up) 
+top                : Jump to the top of the document
+start              : Jump to the start of the document (same as top)
+bottom             : Jump to the bottom of the document
+end                : Jump to the end of the document (same as bottom)
+follow             : Enable "Follow Mode", which will keep the current document continuously scrolled to the end as new lines are added (useful for log files)
+$                  : Same as "follow"
+
 ⯈ Settings are stored in a configuration file, as a JSON file located in the user's home directory :
 
 menu_bg_color           : Background color of the menu bar
@@ -100,6 +112,7 @@ zenburn
 
 ⯈ Macros are also supported in Bled, and can be used to access and launch common pre-defined tasks :
 
+Macros are accessible through the "Macros" menu, reachable also directly via F5 key.
 Macros are stored in a separate file, as a simple text file located in the user's home directory.
 The macros file is generated at first launch if not already present, and contains some placeholders that can be used to create powerful macros.
 Here are the available placeholders that can be used in macros :

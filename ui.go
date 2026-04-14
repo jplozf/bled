@@ -314,6 +314,8 @@ func refreshStatus() {
 	} else if CurrentFile.FemtoBuffer != nil && CurrentFile.FemtoBuffer.Modified() {
 		modifiedText = fmt.Sprintf("[%s]MODIFIED[-]", conf.GetColor(config.MenuSelectedColor))
 		fileMenu[2].Disabled = false // Enable "Save"
+	} else if CurrentFile.FollowMode {
+		modifiedText = fmt.Sprintf("[%s]FOLLOWED[-]", conf.GetColor(config.MenuSelectedColor))
 	} else {
 		modifiedText = ""
 	}
