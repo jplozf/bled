@@ -5,6 +5,7 @@ package main
 // ****************************************************************************
 import (
 	"bled/conf"
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -36,7 +37,10 @@ type efile struct {
 var (
 	efiles      []*efile
 	CurrentFile *efile
+	RecentFiles []string
 )
+
+const MaxRecentFiles = 15
 
 // ****************************************************************************
 // openFile()
@@ -96,6 +100,8 @@ func openFile(filename string, readOnly bool) {
 		LastKnownSize: fileSize,
 	}
 	efiles = append(efiles, newEFile)
+	AddToRecent(filename)
+	refreshFileMenu()
 	switchDocument(len(efiles) - 1)
 }
 
@@ -171,18 +177,18 @@ func closeFile(index int) {
 // ****************************************************************************
 func saveFile() {
 	if CurrentFile.ReadOnly {
-		SetStatus("[red]Error: Cannot save a read-only file[-]")
+		SetStatus("Error: Cannot save a read-only file")
 		return
 	}
 	if CurrentFile.FName == "" {
-		SetStatus("[red]Error : No file name defined (use 'Save as')[-]")
+		SetStatus("Error : No file name defined (use 'Save as')")
 		return
 	}
 
 	content := editor.Buf.String()
 	err := os.WriteFile(CurrentFile.FName, []byte(content), 0644)
 	if err != nil {
-		SetStatus(fmt.Sprintf("[red]Error saving file : %v[-]", err))
+		SetStatus(fmt.Sprintf("Error saving file : %v", err))
 		return
 	}
 
@@ -638,4 +644,60 @@ func (m *efile) StartFollowMode() {
 			time.Sleep(500 * time.Millisecond)
 		}
 	}()
+}
+
+// ****************************************************************************
+// AddToRecent()
+// ****************************************************************************
+func AddToRecent(path string) {
+	if path == "" {
+		return
+	}
+	absPath, _ := filepath.Abs(path)
+	newRecent := []string{absPath}
+	for _, f := range RecentFiles {
+		if f != absPath {
+			newRecent = append(newRecent, f)
+		}
+	}
+	if len(newRecent) > MaxRecentFiles {
+		newRecent = newRecent[:MaxRecentFiles]
+	}
+	RecentFiles = newRecent
+	SaveRecent()
+}
+
+// ****************************************************************************
+// SaveRecent()
+// ****************************************************************************
+func SaveRecent() {
+	f, err := os.Create(conf.GetRecentPath())
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	for _, line := range RecentFiles {
+		fmt.Fprintln(f, line)
+	}
+}
+
+// ****************************************************************************
+// ReadRecent()
+// ****************************************************************************
+func ReadRecent() {
+	f, err := os.Open(conf.GetRecentPath())
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	RecentFiles = []string{}
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line != "" {
+			RecentFiles = append(RecentFiles, line)
+		}
+	}
 }

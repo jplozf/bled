@@ -310,10 +310,10 @@ func refreshStatus() {
 	modifiedText := ""
 	if CurrentFile.ReadOnly {
 		modifiedText = fmt.Sprintf("[%s]READ-ONLY[-]", conf.GetColor(config.MenuSelectedColor))
-		fileMenu[2].Disabled = true // Disable "Save" if the file is read-only
+		fileMenu[4].Disabled = true // Disable "Save" if the file is read-only
 	} else if CurrentFile.FemtoBuffer != nil && CurrentFile.FemtoBuffer.Modified() {
 		modifiedText = fmt.Sprintf("[%s]MODIFIED[-]", conf.GetColor(config.MenuSelectedColor))
-		fileMenu[2].Disabled = false // Enable "Save"
+		fileMenu[4].Disabled = false // Enable "Save"
 	} else if CurrentFile.FollowMode {
 		modifiedText = fmt.Sprintf("[%s]FOLLOWED[-]", conf.GetColor(config.MenuSelectedColor))
 	} else {
@@ -371,9 +371,29 @@ func startMessageWorker() {
 // refreshFileMenu()
 // ****************************************************************************
 func refreshFileMenu() {
+	recentEntries := []MenuEntry{}
+
+	for _, path := range RecentFiles {
+		filePath := path // Capture pour la closure
+		recentEntries = append(recentEntries, MenuEntry{
+			Label:  filepath.Base(filePath),
+			Action: func() { openFile(filePath, false) },
+		})
+	}
+
+	// Si la liste est vide, on peut mettre un message informatif
+	if len(recentEntries) == 0 {
+		recentEntries = append(recentEntries, MenuEntry{Label: "Aucun fichier récent", Disabled: true})
+	}
+
 	fileMenu = []MenuEntry{
 		{Label: "New", Action: func() { newFile() }, Shortcut: tcell.KeyCtrlN},
 		{Label: "Open", Action: func() { InputFileOpen() }, Shortcut: tcell.KeyCtrlO},
+		{
+			Label:      "Recent",
+			SubEntries: recentEntries, // On injecte notre sous-menu dynamique ici
+		},
+		{IsSeparator: true},
 		{Label: "Save", Disabled: true, Action: func() { saveFile() }, Shortcut: tcell.KeyCtrlS},
 		{Label: "Save as", Action: func() { SaveFileAs() }},
 		{Label: "Close", Action: func() { closeCurrentFile() }, Shortcut: tcell.KeyCtrlT},

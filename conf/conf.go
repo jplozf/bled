@@ -30,7 +30,7 @@ const (
 	FILE_CONFIG       = "config.json"
 	FILE_LOG          = "bled.log"
 	FILE_MACROS       = "macros"
-	FILE_MRU          = "mru"
+	FILE_MRU          = "mru.txt"
 )
 
 type Config struct {
@@ -47,6 +47,7 @@ type Config struct {
 	GithubUser            string `json:"github_user"`
 	GithubKey             string `json:"github_key"`
 	GithubEmail           string `json:"github_email"`
+	MaxRecentFiles        int    `json:"max_recent_files"`
 }
 
 // ****************************************************************************
@@ -107,6 +108,25 @@ func GetMacrosPath() string {
 }
 
 // ****************************************************************************
+// GetRecentPath()
+// ****************************************************************************
+func GetRecentPath() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return FILE_MRU // Fallback
+	}
+
+	recentDir := filepath.Join(home, APP_FOLDER)
+
+	err = os.MkdirAll(recentDir, 0755)
+	if err != nil {
+		return FILE_MRU // Fallback
+	}
+
+	return filepath.Join(recentDir, FILE_MRU)
+}
+
+// ****************************************************************************
 // LoadConfig()
 // ****************************************************************************
 func LoadConfig() Config {
@@ -127,6 +147,7 @@ func LoadConfig() Config {
 		GithubUser:            "github_user",
 		GithubKey:             "github_key",
 		GithubEmail:           "github_email",
+		MaxRecentFiles:        10,
 	}
 
 	data, err := os.ReadFile(path)

@@ -173,6 +173,9 @@ func main() {
 		return event
 	})
 
+	ReadRecent()
+	refreshFileMenu()
+
 	if len(os.Args) > 1 {
 		// Open file(s) if provided as command-line argument(s)
 		for _, arg := range os.Args[1:] {
@@ -264,6 +267,7 @@ func safeQuit() {
 // ****************************************************************************
 func terminateApp() {
 	SaveMacros()
+	SaveRecent()
 	app.Stop()
 	fmt.Printf("%s %s v%s - %s\n", conf.APP_ICON, conf.APP_NAME, getFullVersion(), conf.APP_URL)
 }

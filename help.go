@@ -74,6 +74,7 @@ theme                   : Theme name (see below for available themes)
 github_user             : User name used for Github commits
 github_key              : Key used for Github operations
 github_email            : Email used for Github commits
+max_recent_files        : Maximum number of recent files to keep track of
 
 Here is the default configuration file content, which is generated at first launch if not already present in the user's home directory :	
 {                                                                                                                                
@@ -125,6 +126,7 @@ Here are the available placeholders that can be used in macros :
 %L : Line number of current file in editor
 %T : Current timestamp
 %H : Home directory of current user
+%U : Current user name
 %s : OS path separator
 
 `

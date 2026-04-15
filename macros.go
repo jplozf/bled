@@ -41,6 +41,7 @@ func SaveMacros() {
 		fmt.Fprintln(wMac, "# %L : Line number of current file in editor")
 		fmt.Fprintln(wMac, "# %T : Current timestamp")
 		fmt.Fprintln(wMac, "# %H : Home directory of current user")
+		fmt.Fprintln(wMac, "# %U : Current user name")
 		fmt.Fprintln(wMac, "# %s : OS path separator")
 		fmt.Fprintln(wMac, "################################################################################")
 		fmt.Fprintln(wMac, "")
@@ -82,6 +83,7 @@ func XeqMacro(k any) {
 	MsgBox = MsgBox.OK("Macro : "+k.(string), out, nil, 0, "main", editor)
 	pages.AddPage("msgBox", MsgBox.Popup(), true, false)
 	pages.ShowPage("msgBox")
+	// TODO : Check if current edit file has been modified, and reload it if needed
 }
 
 // ****************************************************************************
@@ -96,6 +98,7 @@ func replaceVariablesInMacro(k string) string {
 	// %L : Line number of current file in editor
 	// %T : Current timestamp
 	// %H : Home directory of current user
+	// %U : Current user name
 	// %s : OS path separator
 	out := Macros[k]
 	userDir, _ := os.UserHomeDir()
@@ -109,6 +112,7 @@ func replaceVariablesInMacro(k string) string {
 		"%L", strconv.Itoa(CurrentFile.FemtoBuffer.Cursor.Y+1),
 		"%s", string(os.PathSeparator),
 		"%H", userDir,
+		"%U", os.Getenv("USER"),
 	)
 	out = r.Replace(out)
 	return out
