@@ -30,7 +30,7 @@ const (
 	FILE_CONFIG       = "config.json"
 	FILE_LOG          = "bled.log"
 	FILE_MACROS       = "macros"
-	FILE_MRU          = "mru.txt"
+	FILE_RECENTS      = "recents"
 )
 
 type Config struct {
@@ -113,17 +113,17 @@ func GetMacrosPath() string {
 func GetRecentPath() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return FILE_MRU // Fallback
+		return FILE_RECENTS // Fallback
 	}
 
 	recentDir := filepath.Join(home, APP_FOLDER)
 
 	err = os.MkdirAll(recentDir, 0755)
 	if err != nil {
-		return FILE_MRU // Fallback
+		return FILE_RECENTS // Fallback
 	}
 
-	return filepath.Join(recentDir, FILE_MRU)
+	return filepath.Join(recentDir, FILE_RECENTS)
 }
 
 // ****************************************************************************

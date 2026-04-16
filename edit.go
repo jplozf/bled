@@ -650,6 +650,12 @@ func (m *efile) StartFollowMode() {
 // AddToRecent()
 // ****************************************************************************
 func AddToRecent(path string) {
+	// We do not add the file to recent if it's the macros or config file, to avoid cluttering the recent list with these special files
+	if path == conf.GetMacrosPath() || path == conf.GetConfigPath() {
+		return
+	}
+
+	// We add the new file at the beginning of the list, and we remove duplicates
 	if path == "" {
 		return
 	}

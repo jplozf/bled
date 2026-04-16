@@ -78,12 +78,29 @@ func ReadMacros() {
 // XeqMacro()
 // ****************************************************************************
 func XeqMacro(k any) {
-	SetStatus("Executing macro : [" + k.(string) + "]")
-	out := fmt.Sprintf("%s\n", XeqOutErr(replaceVariablesInMacro(k.(string))))
-	MsgBox = MsgBox.OK("Macro : "+k.(string), out, nil, 0, "main", editor)
+	if CurrentFile.FemtoBuffer.Modified() {
+		saveFile()
+	}
+
+	macroName := k.(string)
+	SetStatus("Executing macro : [" + macroName + "]")
+
+	infoBefore, errBefore := os.Stat(CurrentFile.FName)
+
+	cmdString := replaceVariablesInMacro(macroName)
+	output := XeqOutErr(cmdString)
+
+	infoAfter, errAfter := os.Stat(CurrentFile.FName)
+
+	if errBefore == nil && errAfter == nil {
+		if infoAfter.ModTime().After(infoBefore.ModTime()) {
+			refreshDocument()
+		}
+	}
+	out := fmt.Sprintf("%s\n", output)
+	MsgBox = MsgBox.OK("Macro : "+macroName, out, nil, 0, "main", editor)
 	pages.AddPage("msgBox", MsgBox.Popup(), true, false)
 	pages.ShowPage("msgBox")
-	// TODO : Check if current edit file has been modified, and reload it if needed
 }
 
 // ****************************************************************************
