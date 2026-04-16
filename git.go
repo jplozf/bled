@@ -573,10 +573,10 @@ func IsFileGitTracked(f string) bool {
 	out := XeqOut("git ls-files --error-unmatch " + utils.EscapeSpaces(f))
 	b := filepath.Base(f)
 	if out[:len(b)] == b {
-		SetStatus(fmt.Sprintf("File [%s] is git-tracked", f))
+		SetStatus(fmt.Sprintf("File %s is git-tracked", f))
 		rc = true
 	} else {
-		SetStatus(fmt.Sprintf("File [%s] is NOT git-tracked", f))
+		SetStatus(fmt.Sprintf("File %s is NOT git-tracked", f))
 	}
 	return rc
 }

@@ -199,6 +199,13 @@ func saveFile() {
 		refreshMacrosMenu()
 		setMenuUI()
 	}
+
+	if CurrentFile.FName == conf.GetConfigPath() {
+		SetStatus("Refreshing configuration")
+		config = conf.LoadConfig()
+		SetTheme(config.Theme)
+		menuBar.rebuildBar()
+	}
 }
 
 // ****************************************************************************

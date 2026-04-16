@@ -353,7 +353,7 @@ func startMessageWorker() {
 		duration := time.Duration(config.StatusMessageDuration) * time.Second
 		for msg := range messageQueue {
 			app.QueueUpdateDraw(func() {
-				statusMessage.SetText(msg)
+				statusMessage.SetText("⯈ " + msg)
 			})
 
 			time.Sleep(duration)
