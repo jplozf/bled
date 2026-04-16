@@ -605,7 +605,7 @@ func checkUpdate() {
 	if GitVersion != "dev" {
 		localHash := GitVersion[len(GitVersion)-7:]
 		if !strings.EqualFold(remoteHash, localHash) {
-			msg := fmt.Sprintf("An update is available : %s (local)\n                         %s (remote)\n\nVisit the GitHub repository :\n%s", remoteHash, localHash, conf.APP_URL)
+			msg := fmt.Sprintf("An update is available : %s (local)\n                         %s (remote)\n\nVisit the GitHub repository :\n%s", localHash, remoteHash, conf.APP_URL)
 			MsgBox = MsgBox.Info("Update available", msg, nil, 0, "main", editor)
 			pages.AddPage("msgNewVersion", MsgBox.Popup(), true, false)
 			pages.ShowPage("msgNewVersion")
