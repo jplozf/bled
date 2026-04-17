@@ -46,6 +46,7 @@ const MaxRecentFiles = 15
 // openFile()
 // ****************************************************************************
 func openFile(filename string, readOnly bool) {
+	SetStatus(fmt.Sprintf("Opening file %s", filename))
 	// Is already open ? Just switch to it
 	for i, f := range efiles {
 		if f.FName == filename {
@@ -161,6 +162,7 @@ func closeFile(index int) {
 		return
 	}
 
+	SetStatus(fmt.Sprintf("Closing file with index %d", index))
 	// Remove the file from the list
 	efiles = append(efiles[:index], efiles[index+1:]...)
 
@@ -185,6 +187,7 @@ func saveFile() {
 		return
 	}
 
+	SetStatus(fmt.Sprintf("Saving file %s", CurrentFile.FName))
 	content := editor.Buf.String()
 	err := os.WriteFile(CurrentFile.FName, []byte(content), 0644)
 	if err != nil {
@@ -684,6 +687,7 @@ func AddToRecent(path string) {
 // SaveRecent()
 // ****************************************************************************
 func SaveRecent() {
+	SetStatus("Saving recent files list")
 	f, err := os.Create(conf.GetRecentPath())
 	if err != nil {
 		return
@@ -699,6 +703,7 @@ func SaveRecent() {
 // ReadRecent()
 // ****************************************************************************
 func ReadRecent() {
+	SetStatus("Reading recent files list")
 	f, err := os.Open(conf.GetRecentPath())
 	if err != nil {
 		return

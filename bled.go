@@ -16,6 +16,8 @@ package main
 // ****************************************************************************
 import (
 	"bled/conf"
+	"bled/utils"
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,6 +25,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -51,6 +54,7 @@ var (
 	ICmd             int
 	currentDir       string
 	GITInfos         string
+	SessionID        string
 )
 
 // MAJOR Version number, injected at build time
@@ -63,10 +67,13 @@ var GitVersion = "dev"
 // main()
 // ****************************************************************************
 func main() {
-	// Setup the UI components
+	SessionID, _ = utils.RandomHex(3)
+	conf.LogFile, _ = os.OpenFile(conf.GetLogPath(), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	GITInfos = fmt.Sprintf("%s %s %s", conf.APP_ICON, conf.APP_NAME, getFullVersion())
 	Macros = make(map[string]string)
+	// Setup the UI components
 	setUI()
+	SetStatus(fmt.Sprintf("Starting session %s", SessionID))
 	go checkUpdate()
 
 	// Global input capture for shortcuts and focus management
@@ -266,10 +273,12 @@ func safeQuit() {
 // terminateApp()
 // ****************************************************************************
 func terminateApp() {
+	SetStatus("Quitting application")
 	SaveMacros()
 	SaveRecent()
 	app.Stop()
 	fmt.Printf("%s %s v%s - %s\n", conf.APP_ICON, conf.APP_NAME, getFullVersion(), conf.APP_URL)
+	ArchiveLogs()
 }
 
 // ****************************************************************************
@@ -602,13 +611,66 @@ func checkUpdate() {
 		return
 	}
 
+	SetStatus("Checking for update")
 	if GitVersion != "dev" {
 		localHash := GitVersion[len(GitVersion)-7:]
 		if !strings.EqualFold(remoteHash, localHash) {
+			SetStatus(fmt.Sprintf("New version %s versus local version %s found", remoteHash, localHash))
 			msg := fmt.Sprintf("An update is available : %s (local)\n                         %s (remote)\n\nVisit the GitHub repository :\n%s", localHash, remoteHash, conf.APP_URL)
 			MsgBox = MsgBox.Info("Update available", msg, nil, 0, "main", editor)
 			pages.AddPage("msgNewVersion", MsgBox.Popup(), true, false)
 			pages.ShowPage("msgNewVersion")
+		} else {
+			SetStatus("No update found")
+		}
+	}
+}
+
+// ****************************************************************************
+// ArchiveLogs()
+// ****************************************************************************
+func ArchiveLogs() {
+	SetStatus("Archiving logs")
+	type tLogs struct {
+		yyyymm string
+		text   string
+	}
+	var logs []tLogs
+	home, _ := os.UserHomeDir()
+	appDir := filepath.Join(home, conf.APP_FOLDER)
+	// Opening the log file
+	file, err := os.Open(conf.GetLogPath())
+	if err != nil {
+	} else {
+		defer file.Close()
+		// Read the log file
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := scanner.Text()
+			logs = append(logs, tLogs{line[:6], line})
+		}
+		var currentMonth = time.Now().Format("200601")
+		var tagFiles []string
+		for _, t := range logs {
+			// Keep a trace of files we'll have to zip after
+			if !slices.Contains(tagFiles, t.yyyymm) {
+				tagFiles = append(tagFiles, t.yyyymm)
+			}
+			// If the file doesn't exist, create it, or append to the file
+			f, err := os.OpenFile(filepath.Join(appDir, strings.ToLower(conf.APP_NAME)+"_"+t.yyyymm+".log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if err == nil {
+				f.WriteString(t.text + "\n")
+			}
+		}
+		// Zipping the different files except for the actual month
+		for _, tag := range tagFiles {
+			if tag != currentMonth {
+				utils.ZipIt(filepath.Join(appDir, strings.ToLower(conf.APP_NAME)+"_"+tag+".log"), filepath.Join(appDir, strings.ToLower(conf.APP_NAME)+"_"+tag+".zip"))
+				os.Remove(filepath.Join(appDir, strings.ToLower(conf.APP_NAME)+"_"+tag+".log"))
+			} else {
+				os.Rename(filepath.Join(appDir, conf.FILE_LOG), filepath.Join(appDir, conf.FILE_LOG+".bak"))
+				os.Rename(filepath.Join(appDir, strings.ToLower(conf.APP_NAME)+"_"+tag+".log"), filepath.Join(appDir, conf.FILE_LOG))
+			}
 		}
 	}
 }

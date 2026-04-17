@@ -19,6 +19,7 @@ import (
 	"bled/utils"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -283,6 +284,17 @@ func setUI() {
 // SetStatus()
 // ****************************************************************************
 func SetStatus(txt string) {
+	splittedText := strings.Split(txt, "\n")
+	if len(splittedText) <= 1 {
+		current := time.Now()
+		conf.LogFile.WriteString(fmt.Sprintf("%s [%s] : %s\n", current.Format("20060102-150405"), SessionID, txt))
+	} else {
+		for _, s := range splittedText {
+			current := time.Now()
+			conf.LogFile.WriteString(fmt.Sprintf("%s [%s] : %s\n", current.Format("20060102-150405"), SessionID, s))
+		}
+	}
+
 	select {
 	case messageQueue <- txt:
 	default:

@@ -25,6 +25,7 @@ var (
 // SaveMacros()
 // ****************************************************************************
 func SaveMacros() {
+	SetStatus("Saving macros file")
 	fMac, err := os.Create(conf.GetMacrosPath())
 	if err == nil {
 		defer fMac.Close()
@@ -56,6 +57,7 @@ func SaveMacros() {
 // ReadMacros()
 // ****************************************************************************
 func ReadMacros() {
+	SetStatus("Reading macros file")
 	fMac, err := os.Open(conf.GetMacrosPath())
 	if err == nil {
 		for k := range Macros {
@@ -139,6 +141,7 @@ func replaceVariablesInMacro(k string) string {
 // editMacrosFile()
 // ****************************************************************************
 func editMacrosFile() {
+	SetStatus("Editing macros file")
 	openFile(conf.GetMacrosPath(), false)
 }
 

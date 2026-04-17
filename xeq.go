@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bled/conf"
 	"bytes"
 	"fmt"
 	"os"
@@ -29,7 +28,6 @@ func Xeq(c string) {
 
 	if len(sCmd) > 0 {
 		SetStatus(fmt.Sprintf("Running [%s]", c))
-		// 1. Setup the command
 		cmdOptions := cmd.Options{
 			Buffered:  false, // We want streaming
 			Streaming: true,
@@ -38,50 +36,46 @@ func Xeq(c string) {
 		//activeCmd = xCmd // Assign to the shared variable
 		xCmd.Dir = currentDir
 
-		// 2. Open the log file once (use O_APPEND)
-		fOut, err := os.OpenFile(conf.GetLogPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			// Handle error
-			SetStatus("Error opening log file: " + err.Error())
-		} else {
-			SetStatus("Using " + conf.GetLogPath())
-		}
+		/*
+			fOut, err := os.OpenFile(conf.GetLogPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				// Handle error
+				SetStatus("Error opening log file: " + err.Error())
+			} else {
+				SetStatus("Using " + conf.GetLogPath())
+			}
+		*/
 
-		// 3. Start the command in the background
+		// Start the command in the background
 		statusChan := xCmd.Start()
 		// Check if the command failed to even start (e.g., command not found)
 		initialStatus := xCmd.Status()
 		if initialStatus.Error != nil {
 			SetStatus("Error: " + initialStatus.Error.Error())
-			// Log it to the file as well
-			fmt.Fprintln(fOut, "START ERROR: "+initialStatus.Error.Error())
 			return
 		}
 
 		// 4. Handle Output & Lifecycle in a single Goroutine
 
 		go func() {
-			defer fOut.Close()
-
 			// Write header to file
-			fmt.Fprintf(fOut, "%s ⯈ %s\n", time.Now().Format("20060102-150405"), c)
 			for {
 				select {
 				case line, open := <-xCmd.Stdout:
 					if !open {
 						xCmd.Stdout = nil
 					} else {
-						fmt.Fprintln(fOut, line)
+						SetStatus(line)
 					}
 				case line, open := <-xCmd.Stderr:
 					if !open {
 						xCmd.Stderr = nil
 					} else {
-						fmt.Fprintln(fOut, line)
+						SetStatus(line)
 					}
 				case status := <-statusChan:
 					// Command finished!
-					fmt.Fprintf(fOut, "%s ⯈ Done [%s] Exit Code: %d\n", time.Now().Format("20060102-150405"), c, status.Exit)
+					SetStatus(fmt.Sprintf("%s ⯈ Done [%s] Exit Code: %d\n", time.Now().Format("20060102-150405"), c, status.Exit))
 					app.QueueUpdateDraw(func() {
 						SetStatus(fmt.Sprintf("Done [%s] Exit Code: %d", c, status.Exit))
 					})
