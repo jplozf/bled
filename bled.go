@@ -82,7 +82,10 @@ func main() {
 		if result := menuBar.HandleShortcuts(event); result == nil {
 			return nil
 		}
-
+		// CTRL+C disabled
+		if event.Key() == tcell.KeyCtrlC {
+			return nil
+		}
 		// ALT+S
 		evkSaveAs := tcell.NewEventKey(tcell.KeyRune, 's', tcell.ModAlt)
 		if event.Key() == evkSaveAs.Key() && event.Rune() == evkSaveAs.Rune() && event.Modifiers() == evkSaveAs.Modifiers() {
