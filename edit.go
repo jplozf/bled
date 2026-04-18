@@ -247,6 +247,24 @@ func refreshDocument() {
 }
 
 // ****************************************************************************
+// Reload()
+// ****************************************************************************
+func (f *efile) Reload() error {
+	oldX, oldY := f.FemtoBuffer.Cursor.X, f.FemtoBuffer.Cursor.Y
+	data, err := os.ReadFile(f.FName)
+	if err != nil {
+		return err
+	}
+	f.FemtoBuffer.Replace(f.FemtoBuffer.Start(), f.FemtoBuffer.End(), string(data))
+	f.FemtoBuffer.Cursor.Y = oldY
+	f.FemtoBuffer.Cursor.X = oldX
+	f.FemtoBuffer.Cursor.Relocate()
+	f.FemtoBuffer.IsModified = false
+
+	return nil
+}
+
+// ****************************************************************************
 // getFilePagination()
 // ****************************************************************************
 func getFilePagination() string {

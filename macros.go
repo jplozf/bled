@@ -96,7 +96,9 @@ func XeqMacro(k any) {
 
 	if errBefore == nil && errAfter == nil {
 		if infoAfter.ModTime().After(infoBefore.ModTime()) {
-			refreshDocument()
+			SetStatus("Refreshing document since it has been modified")
+			CurrentFile.Reload()
+			editor.Buf = CurrentFile.FemtoBuffer
 		}
 	}
 	out := fmt.Sprintf("%s\n", output)
