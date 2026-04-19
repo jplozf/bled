@@ -34,16 +34,19 @@ func SaveMacros() {
 		fmt.Fprintln(wMac, "# Macros file generated on "+time.Now().Format("20060201-150405"))
 		fmt.Fprintln(wMac, "################################################################################")
 		fmt.Fprintln(wMac, "# These placeholders can be used into macros :")
-		fmt.Fprintln(wMac, "# %D : Full directory of current file")
-		fmt.Fprintln(wMac, "# %P : Parent directory of current file")
-		fmt.Fprintln(wMac, "# %F : Full file name with directory and extension of current file")
-		fmt.Fprintln(wMac, "# %f : File name without path and with extension of current file")
-		fmt.Fprintln(wMac, "# %e : File name without path nor extension of current file")
-		fmt.Fprintln(wMac, "# %L : Line number of current file in editor")
-		fmt.Fprintln(wMac, "# %T : Current timestamp")
-		fmt.Fprintln(wMac, "# %H : Home directory of current user")
-		fmt.Fprintln(wMac, "# %U : Current user name")
-		fmt.Fprintln(wMac, "# %s : OS path separator")
+		fmt.Fprintln(wMac, "# %D  : Full directory of current file")
+		fmt.Fprintln(wMac, "# %P  : Parent directory of current file")
+		fmt.Fprintln(wMac, "# %F  : Full file name with directory and extension of current file")
+		fmt.Fprintln(wMac, "# %f  : File name without path and with extension of current file")
+		fmt.Fprintln(wMac, "# %e  : File name without path nor extension of current file")
+		fmt.Fprintln(wMac, "# %L  : Line number of current file in editor")
+		fmt.Fprintln(wMac, "# %T  : Current timestamp")
+		fmt.Fprintln(wMac, "# %H  : Home directory of current user")
+		fmt.Fprintln(wMac, "# %U  : Current user name")
+		fmt.Fprintln(wMac, "# %s  : OS path separator")
+		fmt.Fprintln(wMac, "# %GU : GitHub user from config file")
+		fmt.Fprintln(wMac, "# %GK : GitHub key from config file")
+		fmt.Fprintln(wMac, "# %GE : GitHub email from config file")
 		fmt.Fprintln(wMac, "################################################################################")
 		fmt.Fprintln(wMac, "")
 		for k, v := range Macros {
@@ -111,16 +114,19 @@ func XeqMacro(k any) {
 // replaceVariablesInMacro()
 // ****************************************************************************
 func replaceVariablesInMacro(k string) string {
-	// %D : Full directory of current file
-	// %P : Parent directory of current file
-	// %F : Full file name with directory and extension of current file
-	// %f : File name without path and with extension of current file
-	// %e : File name without path nor extension of current file
-	// %L : Line number of current file in editor
-	// %T : Current timestamp
-	// %H : Home directory of current user
-	// %U : Current user name
-	// %s : OS path separator
+	// %D  : Full directory of current file
+	// %P  : Parent directory of current file
+	// %F  : Full file name with directory and extension of current file
+	// %f  : File name without path and with extension of current file
+	// %e  : File name without path nor extension of current file
+	// %L  : Line number of current file in editor
+	// %T  : Current timestamp
+	// %H  : Home directory of current user
+	// %U  : Current user name
+	// %s  : OS path separator
+	// %GU : GitHub user from config file
+	// %GK : GitHub key from config file
+	// %GE : GitHub email from config file
 	out := Macros[k]
 	userDir, _ := os.UserHomeDir()
 	r := strings.NewReplacer(
@@ -134,6 +140,48 @@ func replaceVariablesInMacro(k string) string {
 		"%s", string(os.PathSeparator),
 		"%H", userDir,
 		"%U", os.Getenv("USER"),
+		"%GU", config.GithubUser,
+		"%GK", config.GithubKey,
+		"%GE", config.GithubEmail,
+	)
+	out = r.Replace(out)
+	return out
+}
+
+// ****************************************************************************
+// replaceVariablesInTemplate()
+// ****************************************************************************
+func replaceVariablesInTemplate(template string) string {
+	// %D  : Full directory of current file
+	// %P  : Parent directory of current file
+	// %F  : Full file name with directory and extension of current file
+	// %f  : File name without path and with extension of current file
+	// %e  : File name without path nor extension of current file
+	// %L  : Line number of current file in editor
+	// %T  : Current timestamp
+	// %H  : Home directory of current user
+	// %U  : Current user name
+	// %s  : OS path separator
+	// %GU : GitHub user from config file
+	// %GK : GitHub key from config file
+	// %GE : GitHub email from config file
+
+	out := template
+	userDir, _ := os.UserHomeDir()
+	r := strings.NewReplacer(
+		"%D", utils.EscapeSpaces(filepath.Dir(CurrentFile.FName)),
+		"%P", utils.EscapeSpaces(filepath.Base(filepath.Dir(CurrentFile.FName))),
+		"%F", utils.EscapeSpaces(CurrentFile.FName),
+		"%f", utils.EscapeSpaces(filepath.Base(CurrentFile.FName)),
+		"%e", utils.EscapeSpaces(filepath.Base(strings.TrimSuffix(filepath.Base(CurrentFile.FName), filepath.Ext(CurrentFile.FName)))),
+		"%T", time.Now().Format("20060102-150405"),
+		"%L", strconv.Itoa(CurrentFile.FemtoBuffer.Cursor.Y+1),
+		"%s", string(os.PathSeparator),
+		"%H", userDir,
+		"%U", os.Getenv("USER"),
+		"%GU", config.GithubUser,
+		"%GK", config.GithubKey,
+		"%GE", config.GithubEmail,
 	)
 	out = r.Replace(out)
 	return out

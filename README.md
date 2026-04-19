@@ -125,6 +125,9 @@ Here are the available placeholders that can be used as variables in macros :
 * `%H` : Home directory of current user
 * `%U` : Current user name
 * `%s` : OS path separator
+* `%GU`: GitHub user from config file
+* `%GK`: GitHub key from config file
+* `%GE`: GitHub email from config file
 
 Macros syntax is simple, each line in the macros file represents a macro, with the following format :
 
@@ -137,3 +140,24 @@ For example, a macro to open the current file in the default system editor could
 This macro will use the `xdg-open` command to open the current file's directory (represented by the `%D` placeholder) in the default system explorer when executed.
 
 You can create as many macros as you want, and they will be available in the **Macros** menu for easy access.
+
+## 📁 Templates
+* Templates for new files are located into the `~/.bled/templates` directory. 
+* You can add or remove templates as you wish. 
+* These templates can accept the same placeholders as macros.
+
+## 📦 Git status
+
+When a file is tracked by **Git**, the following informations are displayed in the right top corner of the editor in the following format :
+
+`[current file status in Git]:[current commit hash]:[global Git status]:[current branch name]`
+
+## Exemple :
+
+`M:37d6c0e:Pending:main`
+
+Which means that :
+* the current file has been modified locally `M`
+* the current commit hash is `37d6c0e` 
+* there are `pending` changes in this Git repository
+* and the current branch name is `main`.

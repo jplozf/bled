@@ -118,16 +118,19 @@ Macros are stored in a separate file, as a simple text file located in the user'
 The macros file is generated at first launch if not already present, and contains some placeholders that can be used to create powerful macros.
 Here are the available placeholders that can be used in macros :
 
-%D : Full directory of current file
-%P : Parent directory of current file
-%F : Full file name with directory and extension of current file
-%f : File name without path and with extension of current file
-%e : File name without path nor extension of current file
-%L : Line number of current file in editor
-%T : Current timestamp
-%H : Home directory of current user
-%U : Current user name
-%s : OS path separator
+%D  : Full directory of current file
+%P  : Parent directory of current file
+%F  : Full file name with directory and extension of current file
+%f  : File name without path and with extension of current file
+%e  : File name without path nor extension of current file
+%L  : Line number of current file in editor
+%T  : Current timestamp
+%H  : Home directory of current user
+%U  : Current user name
+%s  : OS path separator
+%GU : GitHub user from config file
+%GK : GitHub key from config file
+%GE : GitHub email from config file
 
 Macros syntax is simple, each line in the macros file represents a macro, with the following format :
 <Macro Name> : <Command to execute>
@@ -138,6 +141,29 @@ Open in Explorer : xdg-open %D
 This macro will use the "xdg-open" command to open the current file's directory (represented by the %D placeholder) in the default system explorer when executed.
 
 You can create as many macros as you want, and they will be available in the "Macros" menu for easy access.
+
+⯈ Templates
+
+Templates for new files are located into the "~/.bled/templates" directory. 
+You can add or remove templates as you wish. 
+These templates can accept the same placeholders as macros.
+
+⯈ Git status
+
+When a file is tracked by Git, the following informations are displayed in the right top corner of the editor in the following format :
+
+[current file status in Git]:[current commit hash]:[global Git status]:[current branch name]
+
+Exemple :
+
+M:37d6c0e:Pending:main
+
+which means that :
+* the current file has been modified locally (M), 
+* the current commit hash is 37d6c0e, 
+* there are pending changes in this Git repository,
+* and the current branch name is "main".
+
 `
 
 // ----------------------------------------------------------------------------

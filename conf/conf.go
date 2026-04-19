@@ -31,6 +31,8 @@ const (
 	FILE_LOG          = "bled.log"
 	FILE_MACROS       = "macros"
 	FILE_RECENTS      = "recents"
+	FOLDER_TEMPLATES  = "templates"
+	FILE_NEW_TEMPLATE = "noname"
 )
 
 type Config struct {
@@ -51,6 +53,24 @@ type Config struct {
 }
 
 var LogFile *os.File
+
+// ****************************************************************************
+// GetConfigDir()
+// ****************************************************************************
+func GetConfigDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return APP_FOLDER
+	}
+
+	configDir := filepath.Join(home, APP_FOLDER)
+	err = os.MkdirAll(configDir, 0755)
+	if err != nil {
+		return APP_FOLDER // Fallback
+	}
+
+	return configDir
+}
 
 // ****************************************************************************
 // GetConfigPath()

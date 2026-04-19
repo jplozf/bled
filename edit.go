@@ -111,7 +111,7 @@ func openFile(filename string, readOnly bool) {
 // ****************************************************************************
 func newFile() {
 	// Find a unique name for the new file (noname, noname-01, noname-02, etc.)
-	tempName := "noname"
+	tempName := conf.FILE_NEW_TEMPLATE
 	counter := 1
 
 	// OLoop until we find a name that is not already used by an open file
@@ -127,7 +127,7 @@ func newFile() {
 			break // The name is unique, we can use it
 		}
 		// Otherwise, generate the next name and check again
-		tempName = fmt.Sprintf("noname-%02d", counter)
+		tempName = fmt.Sprintf("%s-%02d", conf.NEW_FILE_TEMPLATE, counter)
 		counter++
 	}
 

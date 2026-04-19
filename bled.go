@@ -705,3 +705,44 @@ func ArchiveLogs() {
 		}
 	}
 }
+
+// ****************************************************************************
+// GetTemplates()
+// ****************************************************************************
+func GetTemplates() []string {
+	templateDir := filepath.Join(conf.GetConfigDir(), conf.FOLDER_TEMPLATES)
+	os.MkdirAll(templateDir, 0755)
+
+	files, err := os.ReadDir(templateDir)
+	if err != nil {
+		return nil
+	}
+
+	var list []string
+	for _, f := range files {
+		if !f.IsDir() {
+			list = append(list, f.Name())
+		}
+	}
+	return list
+}
+
+// ****************************************************************************
+// CreateFromTemplate()
+// ****************************************************************************
+func CreateFromTemplate(templateName string) {
+	templatePath := filepath.Join(conf.GetConfigDir(), conf.FOLDER_TEMPLATES, templateName)
+	content, err := os.ReadFile(templatePath)
+	if err != nil {
+		SetStatus("Error reading template : " + err.Error())
+		return
+	}
+
+	finalContent := replaceVariablesInTemplate(string(content))
+	newFile()
+	editor.Buf.Insert(editor.Buf.Cursor.Loc, finalContent)
+	editor.Buf.Cursor.Loc = femto.Loc{X: 0, Y: 0}
+	editor.Buf.Cursor.Relocate()
+
+	SetStatus("Created new file from template : " + templateName)
+}

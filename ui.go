@@ -322,10 +322,10 @@ func refreshStatus() {
 	modifiedText := ""
 	if CurrentFile.ReadOnly {
 		modifiedText = fmt.Sprintf("[%s]READ-ONLY[-]", conf.GetColor(config.MenuSelectedColor))
-		fileMenu[4].Disabled = true // Disable "Save" if the file is read-only
+		fileMenu[5].Disabled = true // Disable "Save" if the file is read-only
 	} else if CurrentFile.FemtoBuffer != nil && CurrentFile.FemtoBuffer.Modified() {
 		modifiedText = fmt.Sprintf("[%s]MODIFIED[-]", conf.GetColor(config.MenuSelectedColor))
-		fileMenu[4].Disabled = false // Enable "Save"
+		fileMenu[5].Disabled = false // Enable "Save"
 	} else if CurrentFile.FollowMode {
 		modifiedText = fmt.Sprintf("[%s]FOLLOWED[-]", conf.GetColor(config.MenuSelectedColor))
 	} else {
@@ -398,8 +398,28 @@ func refreshFileMenu() {
 		recentEntries = append(recentEntries, MenuEntry{Label: "Aucun fichier récent", Disabled: true})
 	}
 
+	// Construction du sous-menu Templates
+	templateEntries := []MenuEntry{}
+	templates := GetTemplates()
+
+	for _, t := range templates {
+		tName := t // Capture pour la closure
+		templateEntries = append(templateEntries, MenuEntry{
+			Label:  tName,
+			Action: func() { CreateFromTemplate(tName) },
+		})
+	}
+
+	if len(templateEntries) == 0 {
+		templateEntries = append(templateEntries, MenuEntry{Label: "Aucun template trouvé", Disabled: true})
+	}
+
 	fileMenu = []MenuEntry{
 		{Label: "New", Action: func() { newFile() }, Shortcut: tcell.KeyCtrlN},
+		{
+			Label:      "New from Template",
+			SubEntries: templateEntries,
+		},
 		{Label: "Open", Action: func() { InputFileOpen() }, Shortcut: tcell.KeyCtrlO},
 		{
 			Label:      "Recent",
