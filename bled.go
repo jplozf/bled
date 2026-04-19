@@ -29,6 +29,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
 	"github.com/pgavlin/femto"
 	"github.com/rivo/tview"
@@ -55,6 +56,7 @@ var (
 	currentDir       string
 	GITInfos         string
 	SessionID        string
+	LocalClipboard   string
 )
 
 // MAJOR Version number, injected at build time
@@ -82,10 +84,6 @@ func main() {
 		if result := menuBar.HandleShortcuts(event); result == nil {
 			return nil
 		}
-		// CTRL+C disabled
-		if event.Key() == tcell.KeyCtrlC {
-			return nil
-		}
 		// ALT+S
 		evkSaveAs := tcell.NewEventKey(tcell.KeyRune, 's', tcell.ModAlt)
 		if event.Key() == evkSaveAs.Key() && event.Rune() == evkSaveAs.Rune() && event.Modifiers() == evkSaveAs.Modifiers() {
@@ -94,6 +92,36 @@ func main() {
 		}
 
 		switch event.Key() {
+		case tcell.KeyCtrlC:
+			LocalClipboard = editor.Buf.Cursor.GetSelection()
+			if LocalClipboard != "" {
+				clipboard.WriteAll(LocalClipboard)
+				SetStatus("Copied to system clipboard")
+			}
+			editor.Copy()
+			return nil
+
+		case tcell.KeyCtrlV:
+			systemContent, err := clipboard.ReadAll()
+			if err == nil && systemContent != "" {
+				editor.Buf.Insert(editor.Buf.Cursor.Loc, systemContent)
+				SetStatus("Pasted from system clipboard")
+			} else if LocalClipboard != "" {
+				editor.Buf.Insert(editor.Buf.Cursor.Loc, LocalClipboard)
+				SetStatus("Pasted from local clipboard")
+			}
+			editor.Buf.Cursor.Relocate()
+			return nil
+
+		case tcell.KeyCtrlX:
+			LocalClipboard = editor.Buf.Cursor.GetSelection()
+			if LocalClipboard != "" {
+				clipboard.WriteAll(LocalClipboard)
+				SetStatus("Cut to system clipboard")
+			}
+			editor.Cut()
+			return nil
+
 		case tcell.KeyF4:
 			if CurrentFile != nil {
 				jumpToNextMatch()

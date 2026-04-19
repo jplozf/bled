@@ -133,9 +133,9 @@ Macros syntax is simple, each line in the macros file represents a macro, with t
 <Macro Name> : <Command to execute>
 
 For example, a macro to open the current file in the default system editor could be defined as follows :
-Open in Editor : xdg-open %F
+Open in Explorer : xdg-open %D
 
-This macro will use the "xdg-open" command to open the current file (represented by the %F placeholder) in the default system editor when executed.
+This macro will use the "xdg-open" command to open the current file's directory (represented by the %D placeholder) in the default system explorer when executed.
 
 You can create as many macros as you want, and they will be available in the "Macros" menu for easy access.
 `
