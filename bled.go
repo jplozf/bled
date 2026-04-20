@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -48,6 +47,7 @@ var (
 	DlgInputFileOpen *Dialog
 	DlgSaveFileAs    *Dialog
 	DlgInputGotoLine *Dialog
+	DlgOverwrite     *Dialog
 	lastSearchQuery  string
 	totalMatches     int
 	currentMatchIdx  int
@@ -102,6 +102,10 @@ func main() {
 			return nil
 
 		case tcell.KeyCtrlV:
+			if CurrentFile != nil && CurrentFile.ReadOnly {
+				SetStatus("Cannot paste into a read-only file")
+				return nil
+			}
 			systemContent, err := clipboard.ReadAll()
 			if err == nil && systemContent != "" {
 				editor.Buf.Insert(editor.Buf.Cursor.Loc, systemContent)
@@ -114,6 +118,10 @@ func main() {
 			return nil
 
 		case tcell.KeyCtrlX:
+			if CurrentFile != nil && CurrentFile.ReadOnly {
+				SetStatus("Cannot cut from a read-only file")
+				return nil
+			}
 			LocalClipboard = editor.Buf.Cursor.GetSelection()
 			if LocalClipboard != "" {
 				clipboard.WriteAll(LocalClipboard)
@@ -372,17 +380,54 @@ func SaveFileAs() {
 func confirmSaveAs(rc DlgButton, idx int) {
 	if rc == BUTTON_OK {
 		newName := DlgSaveFileAs.Value
-		err := ioutil.WriteFile(newName, []byte(CurrentFile.FemtoBuffer.String()), 0600)
-		if err == nil {
-			SetStatus(fmt.Sprintf("File %s successfully saved", newName))
-			CurrentFile.FName = newName
-			CurrentFile.FemtoBuffer.IsModified = false
-			closeCurrentFile()
-			openFile(newName, false)
-		} else {
-			SetStatus(err.Error())
+		if newName == "" {
+			return
 		}
+		info, err := os.Stat(newName)
+		if err == nil {
+			if info.IsDir() {
+				SetStatus("Error : " + newName + " is a directory")
+				return
+			}
+			showOverwriteConfirmation(newName)
+			return
+		}
+		performActualSave(newName)
 	}
+}
+
+// ****************************************************************************
+// performActualSave()
+// ****************************************************************************
+func performActualSave(path string) {
+	err := os.WriteFile(path, []byte(CurrentFile.FemtoBuffer.String()), 0644)
+	if err == nil {
+		SetStatus(fmt.Sprintf("File %s saved successfully", filepath.Base(path)))
+		CurrentFile.FName = path
+		CurrentFile.FemtoBuffer.IsModified = false
+		closeCurrentFile()
+		openFile(path, false)
+	} else {
+		SetStatus("Save error: " + err.Error())
+	}
+}
+
+// ****************************************************************************
+// showOverwriteConfirmation()
+// ****************************************************************************
+func showOverwriteConfirmation(path string) {
+	DlgOverwrite = DlgOverwrite.YesNoCancel("Overwrite", // Title
+		fmt.Sprintf("The file '%s' already exists.\nDo you want to overwrite it ?", filepath.Base(path)),
+		func(rc DlgButton, idx int) {
+			switch rc {
+			case BUTTON_YES:
+				performActualSave(path)
+			}
+		},
+		0, "main", editor)
+
+	pages.AddPage("dlgOverwrite", DlgOverwrite.Popup(), true, false)
+	pages.ShowPage("dlgOverwrite")
 }
 
 // ****************************************************************************
@@ -451,15 +496,11 @@ func closeCurrentFile() {
 // ****************************************************************************
 func getTabConfig() (isSoft bool, width int) {
 	if CurrentFile == nil {
-		return false, 8 // Par défaut standard
+		return false, 8
 	}
-
-	// Si c'est du Python, on impose les Soft Tabs (4 espaces)
 	if strings.HasSuffix(strings.ToLower(CurrentFile.FName), ".py") {
 		return true, 4
 	}
-
-	// Pour le Go ou les autres, on utilise souvent des Hard Tabs (largeur 8 ou 4)
 	return false, 4
 }
 
@@ -470,15 +511,10 @@ func convertTabsToSpaces(buf *femto.Buffer, width int) int {
 	count := 0
 	spaces := strings.Repeat(" ", width)
 
-	// On parcourt chaque ligne du buffer
 	for i := 0; i < buf.NumLines; i++ {
 		line := string(buf.Line(i))
 		if strings.Contains(line, "\t") {
-			// Remplacement de tous les \t par les espaces
 			newLine := strings.ReplaceAll(line, "\t", spaces)
-
-			// On remplace la ligne dans le buffer
-			// Note: On utilise souvent Replace() sur le buffer pour garder l'Undo
 			buf.Replace(femto.Loc{X: 0, Y: i}, femto.Loc{X: len(line), Y: i}, newLine)
 			count++
 		}
@@ -555,14 +591,13 @@ func getScrollPercentage() int {
 // ****************************************************************************
 func toggleGotoPanel(show bool) {
 	if show {
-		// On cache le panneau de recherche s'il est ouvert pour éviter l'empilement
 		toggleSearchPanel(false)
 
-		layout.ResizeItem(gotoPanel, 1, 0) // On lui donne 1 ligne de hauteur
+		layout.ResizeItem(gotoPanel, 1, 0)
 		gotoPanel.active = true
 		app.SetFocus(gotoPanel.input)
 	} else {
-		layout.ResizeItem(gotoPanel, 0, 0) // On le cache
+		layout.ResizeItem(gotoPanel, 0, 0)
 		gotoPanel.active = false
 		if CurrentFile != nil {
 			app.SetFocus(CurrentFile.FemtoView)
@@ -575,14 +610,13 @@ func toggleGotoPanel(show bool) {
 // ****************************************************************************
 func toggleSearchPanel(show bool) {
 	if show {
-		// On cache le panneau de recherche s'il est ouvert pour éviter l'empilement
 		toggleGotoPanel(false)
 
-		layout.ResizeItem(searchPanel, 2, 0) // On lui donne 2 lignes de hauteur
+		layout.ResizeItem(searchPanel, 2, 0)
 		searchPanel.active = true
 		app.SetFocus(searchPanel.searchInput)
 	} else {
-		layout.ResizeItem(searchPanel, 0, 0) // On le cache
+		layout.ResizeItem(searchPanel, 0, 0)
 		searchPanel.active = false
 		if CurrentFile != nil {
 			app.SetFocus(CurrentFile.FemtoView)

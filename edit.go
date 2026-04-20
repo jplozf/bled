@@ -114,7 +114,7 @@ func newFile() {
 	tempName := conf.FILE_NEW_TEMPLATE
 	counter := 1
 
-	// OLoop until we find a name that is not already used by an open file
+	// Loop until we find a name that is not already used by an open file
 	for {
 		found := false
 		for _, f := range efiles {
@@ -131,6 +131,8 @@ func newFile() {
 		counter++
 	}
 
+	cwd, _ := os.Getwd()
+	tempName = filepath.Join(cwd, tempName)
 	// Create a new buffer with the unique name
 	newBuf := femto.NewBufferFromString("", tempName)
 
