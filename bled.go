@@ -151,7 +151,7 @@ func main() {
 			}
 			return nil
 
-		case tcell.KeyF10:
+		case tcell.KeyF10, tcell.KeyCtrlL:
 			if menuBar.HasFocus() {
 				menuBar.closeAllMenus()
 				app.SetFocus(editor)
@@ -256,7 +256,7 @@ func getFullVersion() string {
 // ShowWelcomePopup()
 // ****************************************************************************
 func ShowWelcomePopup() {
-	msg := fmt.Sprintf("Welcome to %s v%s\n\nVisit the GitHub repository :\n%s\n\nF1  : Help\nF10 : Menu\nEsc : Close this panel", conf.APP_NAME, getFullVersion(), conf.APP_URL)
+	msg := fmt.Sprintf("Welcome to %s v%s\n\nVisit the GitHub repository :\n%s\n\nF1 ...........: Help\nF10 or CTRL+L : Menu\nEsc ..........: Close this panel", conf.APP_NAME, getFullVersion(), conf.APP_URL)
 	MsgBox = MsgBox.Info("Welcome", msg, nil, 0, "main", editor)
 	pages.AddPage("msgNewVersion", MsgBox.Popup(), true, false)
 	pages.ShowPage("msgNewVersion")
@@ -764,9 +764,8 @@ func GetTemplates() []string {
 // ****************************************************************************
 // CreateFromTemplate()
 // ****************************************************************************
-func CreateFromTemplate(templateName string) {
-	templatePath := filepath.Join(conf.GetConfigDir(), conf.FOLDER_TEMPLATES, templateName)
-	content, err := os.ReadFile(templatePath)
+func CreateFromTemplate(fullPath string) {
+	content, err := os.ReadFile(fullPath)
 	if err != nil {
 		SetStatus("Error reading template : " + err.Error())
 		return
@@ -778,5 +777,5 @@ func CreateFromTemplate(templateName string) {
 	editor.Buf.Cursor.Loc = femto.Loc{X: 0, Y: 0}
 	editor.Buf.Cursor.Relocate()
 
-	SetStatus("Created new file from template : " + templateName)
+	SetStatus("Created new file from template : " + filepath.Base(fullPath))
 }

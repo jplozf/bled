@@ -18,6 +18,7 @@ import (
 	"bled/conf"
 	"bled/utils"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -383,6 +384,7 @@ func startMessageWorker() {
 // refreshFileMenu()
 // ****************************************************************************
 func refreshFileMenu() {
+	// Rebuild the "Recent" submenu with the updated list of recent files
 	recentEntries := []MenuEntry{}
 
 	for _, path := range RecentFiles {
@@ -393,37 +395,26 @@ func refreshFileMenu() {
 		})
 	}
 
-	// Si la liste est vide, on peut mettre un message informatif
 	if len(recentEntries) == 0 {
 		recentEntries = append(recentEntries, MenuEntry{Label: "Aucun fichier récent", Disabled: true})
 	}
 
-	// Construction du sous-menu Templates
-	templateEntries := []MenuEntry{}
-	templates := GetTemplates()
+	// Rebuild the "New from Template" submenu
+	templateDir := filepath.Join(conf.GetConfigDir(), "templates")
+	os.MkdirAll(templateDir, 0755) // Sécurité
+	templateSubMenu := buildTemplateMenu(templateDir)
 
-	for _, t := range templates {
-		tName := t // Capture pour la closure
-		templateEntries = append(templateEntries, MenuEntry{
-			Label:  tName,
-			Action: func() { CreateFromTemplate(tName) },
-		})
-	}
-
-	if len(templateEntries) == 0 {
-		templateEntries = append(templateEntries, MenuEntry{Label: "Aucun template trouvé", Disabled: true})
-	}
-
+	// Rebuild the "File" menu
 	fileMenu = []MenuEntry{
 		{Label: "New", Action: func() { newFile() }, Shortcut: tcell.KeyCtrlN},
 		{
 			Label:      "New from Template",
-			SubEntries: templateEntries,
+			SubEntries: templateSubMenu,
 		},
 		{Label: "Open", Action: func() { InputFileOpen() }, Shortcut: tcell.KeyCtrlO},
 		{
 			Label:      "Recent",
-			SubEntries: recentEntries, // On injecte notre sous-menu dynamique ici
+			SubEntries: recentEntries,
 		},
 		{IsSeparator: true},
 		{Label: "Save", Disabled: true, Action: func() { saveFile() }, Shortcut: tcell.KeyCtrlS},
@@ -500,4 +491,41 @@ func setMenuUI() {
 		{Label: "Settings", Action: func() { openSettings() }},
 	}
 	menuBar.AddMenu(" Help ", helpEntries)
+}
+
+// ****************************************************************************
+// buildTemplateMenu()
+// ****************************************************************************
+func buildTemplateMenu(path string) []MenuEntry {
+	var entries []MenuEntry
+
+	files, err := os.ReadDir(path)
+	if err != nil {
+		return nil
+	}
+
+	for _, f := range files {
+		fullPath := filepath.Join(path, f.Name())
+
+		if f.IsDir() {
+			subEntries := buildTemplateMenu(fullPath)
+			if len(subEntries) > 0 {
+				entries = append(entries, MenuEntry{
+					Label:      f.Name(),
+					SubEntries: subEntries,
+				})
+			}
+		} else {
+			tName := f.Name()
+			tPath := fullPath
+
+			entries = append(entries, MenuEntry{
+				Label: tName,
+				Action: func() {
+					CreateFromTemplate(tPath)
+				},
+			})
+		}
+	}
+	return entries
 }

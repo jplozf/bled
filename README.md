@@ -36,6 +36,7 @@ Pay honour to whom honour is due, packages used in this project are as follows :
 
 ### Common Functions
 * `CTRL + F` : Switch to the "Find & Replace" panel
+* `CTRL + L` : Access to the main menu of Bled (same as `F10`)
 * `CTRL + S` : Saves the current document being edited
 * `ALT  + S` : Saves the current document being edited under another name
 * `CTRL + N` : Opens a new blank document
@@ -144,6 +145,7 @@ You can create as many macros as you want, and they will be available in the **M
 ## 📁 Templates
 * Templates for new files are located into the `~/.bled/templates` directory. 
 * You can add or remove templates as you wish. 
+* These templates could be structured into sub-folders and rendered as sub-menus in the **Templates** menu. 
 * These templates can accept the same placeholders as macros.
 
 ## 📦 Git status
@@ -161,3 +163,8 @@ Which means that :
 * the current commit hash is `37d6c0e` 
 * there are `pending` changes in this Git repository
 * and the current branch name is `main`.
+
+---
+
+## License
+This project is licensed under the terms of the [MIT license](https://www.mit.edu/~amini/LICENSE.md).
