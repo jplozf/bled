@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/atotto/clipboard"
@@ -57,6 +58,8 @@ var (
 	GITInfos         string
 	SessionID        string
 	LocalClipboard   string
+	statusRibbon     string
+	ribbonMutex      sync.Mutex
 )
 
 // MAJOR Version number, injected at build time

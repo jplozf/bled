@@ -18,6 +18,8 @@ rivo/tview    : Package tview implements rich widgets for terminal based user in
 gdamore/tcell : Tcell is an alternate terminal package, similar in some ways to termbox, but better in others. 
 pgavlin/femto : An editor component for tview. Derived from the micro editor. 
 
+This project is licensed under the terms of the MIT license.
+
 ⯈ The main functions are reachable through function keys :
 
 F1  : This help text
@@ -68,9 +70,7 @@ menu_text_color         : Color of the text in the menu
 menu_disabled_color     : Color of disabled menu items
 show_welcome_popup      : Whether to show a welcome popup at startup
 confirm_on_quit         : Whether to ask for confirmation when quitting with unsaved changes
-status_message_duration : Duration in seconds for which status messages are displayed
 show_hidden_files       : Whether to show hidden files in the file browser dialog
-color_accent            : Accent color used in the UI (e.g. for highlights)
 theme                   : Theme name (see below for available themes)
 github_user             : User name used for Github commits
 github_key              : Key used for Github operations
@@ -166,9 +166,68 @@ which means that :
 * there are pending changes in this Git repository,
 * and the current branch name is "main".
 
-⯈ License
 
-This project is licensed under the terms of the MIT license.
+⯈ Internal Files
+
+Files used internally to manage the behavior of Bled are located into the "~/.bled" directory.
+They look like something like this :
+.
+├── bled.log
+├── bled.log.bak
+├── bled_202603.zip
+├── bled_202602.zip
+├── bled_202601.zip
+├── config.json
+├── macros
+├── recents
+└── templates
+    ├── Assembly Source Code 32 bits.asm
+    ├── Assembly Source Code 64 bits.asm
+    ├── Bash Script
+    ├── C
+    │   ├── C GTK Source Code.c
+    │   ├── C Ncurses Source Code.c
+    │   ├── C Source Code.c
+    │   └── C++ wxWidgets Source Code.cpp
+    ├── Go Source Code.go
+    ├── HTML Page.html
+    ├── Java Applet.java
+    ├── Java Source Code.java
+    ├── Java Swing Application.java
+    ├── Licenses
+    │   ├── apache-v2.0.md
+    │   ├── artistic-v2.0.md
+    │   ├── bsd-2.md
+    │   ├── bsd-3.md
+    │   ├── epl-v1.0.md
+    │   ├── gnu-agpl-v3.0.md
+    │   ├── gnu-fdl-v1.3.md
+    │   ├── gnu-gpl-v1.0.md
+    │   ├── gnu-gpl-v2.0.md
+    │   ├── gnu-gpl-v3.0.md
+    │   ├── gnu-lgpl-v2.1.md
+    │   ├── gnu-lgpl-v3.0.md
+    │   ├── mit.md
+    │   ├── mpl-v2.0.md
+    │   └── unlicense.md
+    ├── Makefile
+    ├── Markdown File.md
+    ├── Python
+    │   ├── Python Script.py
+    │   └── Python TkInter.py
+    ├── QT MainWindow.ui
+    ├── Rust Source Code.rs
+    └── XML File.xml
+
+    Where :
+
+* bled.log         : Main log file
+* bled.log.bak     : Backup log file (used for archiving)
+* bled_YYYYMM.zip  : Archived log file by month
+* config.json      : Configuration file edited from menu "Settings")
+* macros           : Macros file (edited from menu "Macros")
+* recents          : List of recently opened files
+* templates        : Folder for templates (empty by default, use your own templates)
 
 `
 

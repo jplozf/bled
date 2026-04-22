@@ -18,6 +18,9 @@ Pay honour to whom honour is due, packages used in this project are as follows :
 * `gdamore/tcell` : Tcell is an alternate terminal package, similar in some ways to termbox, but better in others. 
 * `pgavlin/femto` : An editor component for tview. Derived from the *micro* editor. 
 
+### License
+This project is licensed under the terms of the [MIT license](https://www.mit.edu/~amini/LICENSE.md).
+
 ---
 
 ## ⌨️ Keybindings
@@ -68,7 +71,7 @@ Settings are stored in a configuration file, as a **JSON** file located in the u
 
 ### Available Settings
 * **Colors :** `menu_bg_color`, `menu_selected_color`, `menu_text_color`, `menu_disabled_color`.
-* **Interface :** `show_welcome_popup`, `confirm_on_quit`, `status_message_duration`, `show_hidden_files`, `color_accent`.
+* **Interface :** `show_welcome_popup`, `confirm_on_quit`, `show_hidden_files`.
 * **Editor :** `theme`, `max_recent_files`.
 * **GitHub :** `github_user`, `github_key`, `github_email`.
 
@@ -154,7 +157,7 @@ When a file is tracked by **Git**, the following informations are displayed in t
 
 `[current file status in Git]:[current commit hash]:[global Git status]:[current branch name]`
 
-## Exemple :
+### Exemple :
 
 `M:37d6c0e:Pending:main`
 
@@ -166,5 +169,68 @@ Which means that :
 
 ---
 
-## License
-This project is licensed under the terms of the [MIT license](https://www.mit.edu/~amini/LICENSE.md).
+## 📁 Internal Files
+
+Files used internally to manage the behavior of **Bled** are located into the `~/.bled` directory. They look like something like this :
+
+
+```bash
+.
+├── bled.log
+├── bled.log.bak
+├── bled_202603.zip
+├── bled_202602.zip
+├── bled_202601.zip
+├── config.json
+├── macros
+├── recents
+└── templates
+    ├── Assembly Source Code 32 bits.asm
+    ├── Assembly Source Code 64 bits.asm
+    ├── Bash Script
+    ├── C
+    │   ├── C GTK Source Code.c
+    │   ├── C Ncurses Source Code.c
+    │   ├── C Source Code.c
+    │   └── C++ wxWidgets Source Code.cpp
+    ├── Go Source Code.go
+    ├── HTML Page.html
+    ├── Java Applet.java
+    ├── Java Source Code.java
+    ├── Java Swing Application.java
+    ├── Licenses
+    │   ├── apache-v2.0.md
+    │   ├── artistic-v2.0.md
+    │   ├── bsd-2.md
+    │   ├── bsd-3.md
+    │   ├── epl-v1.0.md
+    │   ├── gnu-agpl-v3.0.md
+    │   ├── gnu-fdl-v1.3.md
+    │   ├── gnu-gpl-v1.0.md
+    │   ├── gnu-gpl-v2.0.md
+    │   ├── gnu-gpl-v3.0.md
+    │   ├── gnu-lgpl-v2.1.md
+    │   ├── gnu-lgpl-v3.0.md
+    │   ├── mit.md
+    │   ├── mpl-v2.0.md
+    │   └── unlicense.md
+    ├── Makefile
+    ├── Markdown File.md
+    ├── Python
+    │   ├── Python Script.py
+    │   └── Python TkInter.py
+    ├── QT MainWindow.ui
+    ├── Rust Source Code.rs
+    └── XML File.xml
+```
+Where :
+
+| File | Purpose |
+| :--- | :--- |
+| `bled.log` | Main log file |
+| `bled.log.bak` | Backup log file *(used for archiving)* |
+| `bled_YYYYMM.zip` | Archived log file by month |
+| `config.json` | Configuration file *(edited from menu **Settings**)* |
+| `macros` | Macros file *(edited from menu **Macros**)* |
+| `recents` | List of recently opened files |
+| `templates` | Folder for templates *(empty by default, use your own templates)* |

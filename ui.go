@@ -202,6 +202,7 @@ func setUI() {
 	// Horizontal layout for the status bar
 	statusBar := tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(statusFilePos, 0, 1, false).
+		AddItem(tview.NewTextView().SetText("⯈"), 1, 1, false).
 		AddItem(statusMessage, 0, 1, false).
 		AddItem(statusSize, 20, 0, false).
 		AddItem(statusTabs, 10, 0, false).
@@ -273,7 +274,8 @@ func setUI() {
 		}
 	}()
 
-	startMessageWorker()
+	// startMessageWorker()
+	StartStatusConsumer()
 
 	// Show welcome message on startup
 	if config.ShowWelcomePopup {
@@ -359,23 +361,48 @@ func SetTheme(theme string) {
 }
 
 // ****************************************************************************
-// startMessageWorker()
+// StartStatusConsumer()
 // ****************************************************************************
-func startMessageWorker() {
+func StartStatusConsumer() {
+	// Listener goroutine for the message channel
 	go func() {
-		duration := time.Duration(config.StatusMessageDuration) * time.Second
 		for msg := range messageQueue {
+			ribbonMutex.Lock()
+			statusRibbon += " | " + msg
+			ribbonMutex.Unlock()
+		}
+	}()
+
+	// Scrolling goroutine for the status ribbon
+	go func() {
+		ticker := time.NewTicker(120 * time.Millisecond)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			ribbonMutex.Lock()
+			if len(statusRibbon) == 0 {
+				ribbonMutex.Unlock()
+				continue
+			}
+
+			runes := []rune(statusRibbon)
+			statusRibbon = string(runes[1:])
+			display := statusRibbon
+			ribbonMutex.Unlock()
+
 			app.QueueUpdateDraw(func() {
-				statusMessage.SetText("⯈ " + msg)
+				_, _, width, _ := statusMessage.GetInnerRect()
+				if len(display) > width && width > 0 {
+					statusMessage.SetText(display[:width])
+				} else {
+					statusMessage.SetText(display)
+				}
 			})
-
-			time.Sleep(duration)
-
-			app.QueueUpdateDraw(func() {
-				statusMessage.SetText("")
-			})
-
-			time.Sleep(200 * time.Millisecond) // more delay to prevent message overlap if many messages are sent in a short time
+			// Clean up the ribbon if it's empty after scrolling
+			if len(strings.TrimSpace(statusRibbon)) == 0 {
+				statusRibbon = ""
+				app.QueueUpdateDraw(func() { statusMessage.SetText("") })
+			}
 		}
 	}()
 }
@@ -388,7 +415,7 @@ func refreshFileMenu() {
 	recentEntries := []MenuEntry{}
 
 	for _, path := range RecentFiles {
-		filePath := path // Capture pour la closure
+		filePath := path
 		recentEntries = append(recentEntries, MenuEntry{
 			Label:  filepath.Base(filePath),
 			Action: func() { openFile(filePath, false) },
