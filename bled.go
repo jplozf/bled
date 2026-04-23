@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"sync"
@@ -781,4 +782,14 @@ func CreateFromTemplate(fullPath string) {
 	editor.Buf.Cursor.Relocate()
 
 	SetStatus("Created new file from template : " + filepath.Base(fullPath))
+}
+
+var reTviewTags = regexp.MustCompile(`\[([a-zA-Z0-9:#,-]+|[:])\]`)
+
+// ****************************************************************************
+// NetLength()
+// ****************************************************************************
+func NetLength(s string) int {
+	cleanStr := reTviewTags.ReplaceAllString(s, "")
+	return len([]rune(cleanStr))
 }

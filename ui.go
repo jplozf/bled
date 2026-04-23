@@ -46,6 +46,7 @@ var (
 	layout                                                               *tview.Flex
 	searchPanel                                                          *SearchPanel
 	gotoPanel                                                            *GotoPanel
+	statusBar                                                            *tview.Flex
 )
 
 // ****************************************************************************
@@ -200,7 +201,7 @@ func setUI() {
 	statusTime = tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignRight)
 
 	// Horizontal layout for the status bar
-	statusBar := tview.NewFlex().SetDirection(tview.FlexColumn).
+	statusBar = tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(statusFilePos, 0, 1, false).
 		AddItem(tview.NewTextView().SetText("⯈"), 1, 1, false).
 		AddItem(statusMessage, 0, 1, false).
@@ -317,7 +318,9 @@ func refreshStatus() {
 
 	cursorX, cursorY := editor.Cursor.X, editor.Cursor.Y
 	percent := getScrollPercentage()
-	statusFilePos.SetText(fmt.Sprintf("[%s] [%s]%s[-]  Ln %d, Col %d", getFilePagination(), conf.GetColor(config.MenuSelectedColor), name, cursorY+1, cursorX+1))
+	fileStatus := fmt.Sprintf("[%s] [%s]%s[-]  Ln %d, Col %d", getFilePagination(), conf.GetColor(config.MenuSelectedColor), name, cursorY+1, cursorX+1)
+	statusFilePos.SetText(fileStatus)
+	statusBar.ResizeItem(statusFilePos, NetLength(fileStatus)+1, 1)
 
 	size := editor.Buf.Len()
 	statusSize.SetText(utils.HumanFileSize(float64(size)) + fmt.Sprintf(" (%d%%)", percent))
