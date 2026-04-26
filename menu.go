@@ -66,7 +66,7 @@ func NewAppMenuBar(app *tview.Application, pages *tview.Pages) *AppMenuBar {
 		shortcuts:     make(map[tcell.Key]func()),
 	}
 
-	// Horizontale navigation between menu buttons with Left/Right keys
+	// Horizontal navigation between menu buttons with Left/Right keys
 	m.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyRight:
@@ -84,7 +84,7 @@ func NewAppMenuBar(app *tview.Application, pages *tview.Pages) *AppMenuBar {
 	// Background color for the menu bar
 	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
 
-	// Initialisation de la version dès le départ
+	// Version initialization from the start
 	// versionStr := fmt.Sprintf("%s %s %s", conf.APP_ICON, conf.APP_NAME, getFullVersion())
 	m.versionView = tview.NewTextView().
 		SetTextAlign(tview.AlignRight).
@@ -92,7 +92,7 @@ func NewAppMenuBar(app *tview.Application, pages *tview.Pages) *AppMenuBar {
 		SetText(GITInfos + " ")
 
 	m.versionView.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
-	m.versionView.SetTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.versionView.SetTextColor(TextColor)
 
 	return m
 }
@@ -104,7 +104,7 @@ func (m *AppMenuBar) UpdateMenu(title string, entries []MenuEntry) {
 	if m.menuData == nil {
 		m.menuData = make(map[string][]MenuEntry)
 	}
-	// On met à jour uniquement les données
+	// We only update the data
 	m.menuData[title] = entries
 	m.registerShortcuts(entries)
 }
@@ -117,7 +117,7 @@ func (m *AppMenuBar) AddMenu(title string, entries []MenuEntry) *AppMenuBar {
 		m.menuData = make(map[string][]MenuEntry)
 	}
 
-	// --- Sinon, c'est la création initiale du bouton ---
+	// --- Otherwise, it's the initial button creation ---
 	// m.menuTitles = append(m.menuTitles, title)
 	m.menuData[title] = entries
 	m.registerShortcuts(entries)
@@ -128,33 +128,31 @@ func (m *AppMenuBar) AddMenu(title string, entries []MenuEntry) *AppMenuBar {
 			break
 		}
 	}
-	// 3. Si le bouton n'existe pas, on le crée et on l'ajoute
+	// If the button doesn't exist, we create it with the appropriate styles and behavior
 	if !buttonExists {
 		btn := tview.NewButton(title)
 
-		// --- Ton code de style (Yellow/Orange) ici ---
-		// On définit explicitement les styles pour CHAQUE état
-		styleNormal := tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuBgColor)).Foreground(conf.GetColor(conf.LoadConfig().MenuTextColor))
-		styleFocus := tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuSelectedColor)).Foreground(conf.GetColor(conf.LoadConfig().MenuTextColor))
+		// We explicitly define styles for EACH state
+		styleNormal := tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuBgColor)).Foreground(TextColor)
+		styleFocus := tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuSelectedColor)).Foreground(SelectedTextColor)
 
-		// 1. Style au repos
+		// Idle style
 		btn.SetStyle(styleNormal)
-		btn.SetLabelColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+		btn.SetLabelColor(TextColor)
 		btn.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
 
-		// 2. Style quand le bouton est sélectionné (le fameux bleu par défaut)
-		// On force l'Orange (ou le Jaune) pour écraser le bleu du thème
+		// Style when the button is selected
 		btn.SetActivatedStyle(styleFocus)
 		btn.SetBackgroundColorActivated(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
-		btn.SetLabelColorActivated(conf.GetColor(conf.LoadConfig().MenuTextColor))
+		btn.SetLabelColorActivated(SelectedTextColor)
 
-		// Style au repos (Jaune comme la barre)
+		// Idle style
 		btn.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
-		btn.SetLabelColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+		btn.SetLabelColor(TextColor)
 
-		// Style quand on navigue dessus (Orange pour voir où on est)
+		// Style when navigating over it
 		btn.SetBackgroundColorActivated(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
-		btn.SetLabelColorActivated(conf.GetColor(conf.LoadConfig().MenuTextColor))
+		btn.SetLabelColorActivated(SelectedTextColor)
 
 		btn.SetSelectedFunc(func() {
 			bx, by, _, _ := btn.GetRect()
@@ -163,12 +161,12 @@ func (m *AppMenuBar) AddMenu(title string, entries []MenuEntry) *AppMenuBar {
 
 		btn.SetSelectedFunc(func() {
 			bx, by, _, _ := btn.GetRect()
-			// On récupère les données dynamiques au clic
+			// We retrieve dynamic data on click
 			m.showDropdown(m.menuData[title], bx, by+1, "dropdown")
 		})
 
 		m.buttons = append(m.buttons, btn)
-		m.rebuildBar() // On redessine pour inclure le nouveau bouton
+		m.rebuildBar() // We redraw to include the new button
 	}
 
 	return m
@@ -215,7 +213,7 @@ func (m *AppMenuBar) registerShortcuts(entries []MenuEntry) {
 // showDropdown()
 // ****************************************************************************
 func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string) {
-	// 1. Calcul de la largeur dynamique
+	// Dynamic width calculation
 	maxLabelWidth := 0
 	for _, entry := range entries {
 		length := len(entry.Label) + 3
@@ -236,7 +234,7 @@ func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string
 
 	listHeight := len(entries)
 
-	// Détection de bord d'écran
+	// Screen edge detection
 	_, _, sw, sh := m.pages.GetInnerRect()
 	if sw > 0 && x+listWidth > sw {
 		x = sw - listWidth
@@ -248,23 +246,23 @@ func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string
 	list := tview.NewList().ShowSecondaryText(false)
 	list.SetBorder(false)
 	list.SetBackgroundColor(conf.GetColor(config.MenuBgColor))
-	list.SetMainTextColor(conf.GetColor(config.MenuTextColor))
+	list.SetMainTextColor(TextColor)
 	list.SetSelectedBackgroundColor(conf.GetColor(config.MenuSelectedColor))
 	list.SetSelectedTextColor(tcell.ColorWhite)
 	list.SetSelectedFocusOnly(false)
 
-	// Si c'est le premier menu (dropdown principal), on vide la pile
+	// If it's the first menu (main dropdown), we clear the stack
 	if pageName == "dropdown" {
 		m.menuStack = []string{pageName}
 		m.activeList = list
 	} else {
-		// Sinon on ajoute ce sous-menu à la pile
+		// Otherwise, we add this sub-menu to the stack
 		m.menuStack = append(m.menuStack, pageName)
 	}
 
 	for i := range entries {
 		e := &entries[i]
-		idx := i // Capture de l'index pour le closure
+		idx := i // Capture the index for the closure
 
 		if e.IsSeparator {
 			sepLine := " " + strings.Repeat("-", listWidth-2) + " "
@@ -287,7 +285,7 @@ func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string
 		displayLabel := prefix + label + padding
 
 		if e.Disabled {
-			displayLabel = fmt.Sprintf("[%s]%s[%s]", conf.GetColor(config.MenuDisabledColor), displayLabel, conf.GetColor(config.MenuTextColor))
+			displayLabel = fmt.Sprintf("[%s]%s[%s]", conf.GetColor("gray"), displayLabel, TextColor)
 		} else if len(e.SubEntries) > 0 {
 			displayLabel += " ⯈"
 		}
@@ -297,7 +295,7 @@ func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string
 				return
 			}
 
-			// --- GESTION SOUS-MENU AU CLIC ---
+			// --- CLICK SUB-MENU MANAGEMENT ---
 			if len(e.SubEntries) > 0 {
 				subPageName := fmt.Sprintf("submenu_%d", len(m.menuStack))
 				m.showDropdown(e.SubEntries, x+listWidth, y+idx, subPageName)
@@ -341,13 +339,13 @@ func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string
 			}
 
 		case tcell.KeyRight:
-			// Ouvrir le sous-menu si présent
+			// Open the sub-menu if present
 			if len(entry.SubEntries) > 0 {
 				subPageName := fmt.Sprintf("submenu_%d", len(m.menuStack))
 				m.showDropdown(entry.SubEntries, x+listWidth, y+currIdx, subPageName)
 				return nil
 			}
-			// Si on est au niveau 0 et pas de sous-menu, on change de menu principal
+			// If we are at level 0 and no sub-menu, we change the main menu
 			if pageName == "dropdown" {
 				m.closeAllMenus()
 				m.activeBtn = (m.activeBtn + 1) % len(m.buttons)
@@ -356,15 +354,15 @@ func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string
 			}
 
 		case tcell.KeyLeft:
-			// Si c'est un sous-menu, on revient en arrière
+			// If it's a sub-menu, we go back
 			if len(m.menuStack) > 1 {
 				lastPage := m.menuStack[len(m.menuStack)-1]
 				m.menuStack = m.menuStack[:len(m.menuStack)-1]
 				m.pages.RemovePage(lastPage)
-				// Le focus revient automatiquement à la page précédente visible
+				// Focus automatically returns to the previous visible page
 				return nil
 			}
-			// Si on est au niveau 0, on change de menu principal
+			// If we are at level 0, we change the main menu
 			if pageName == "dropdown" {
 				m.closeAllMenus()
 				m.activeBtn = (m.activeBtn - 1 + len(m.buttons)) % len(m.buttons)
@@ -388,7 +386,7 @@ func (m *AppMenuBar) showDropdown(entries []MenuEntry, x, y int, pageName string
 // closeAllMenus()
 // ****************************************************************************
 func (m *AppMenuBar) closeAllMenus() {
-	// Supprime toutes les pages enregistrées dans la pile
+	// Removes all pages saved in the stack
 	for _, pageName := range m.menuStack {
 		m.pages.RemovePage(pageName)
 	}
@@ -438,7 +436,7 @@ func (m *AppMenuBar) OpenMenu() {
 // ShowMenuPopup() - Affiche un menu au centre de l'écran avec un titre
 // ****************************************************************************
 func (m *AppMenuBar) ShowMenuPopup(title string, entries []MenuEntry) {
-	// 1. Calcul des dimensions
+	// Dimensions calculation
 	maxLabelWidth := len(title) + 4
 	for _, entry := range entries {
 		length := len(entry.Label) + 6
@@ -448,28 +446,28 @@ func (m *AppMenuBar) ShowMenuPopup(title string, entries []MenuEntry) {
 	}
 
 	listWidth := maxLabelWidth + 4
-	listHeight := len(entries) + 2 // +2 pour la bordure haut/bas
+	listHeight := len(entries) + 2 // +2 for top/bottom border
 
-	// 2. Calcul du centre de l'écran
+	// Screen center calculation
 	_, _, screenWidth, screenHeight := m.pages.GetInnerRect()
 	x := (screenWidth - listWidth) / 2
 	y := (screenHeight - listHeight) / 2
 
-	// 3. Création de la liste
+	// List creation
 	list := tview.NewList().ShowSecondaryText(false)
 	list.SetBorder(true)
 	list.SetTitle(" " + title + " ")
 	list.SetTitleAlign(tview.AlignCenter)
 
-	// Couleurs (on réutilise votre thème)
+	// Colors (we reuse your theme)
 	list.SetBackgroundColor(conf.GetColor(config.MenuBgColor))
-	list.SetMainTextColor(conf.GetColor(config.MenuTextColor))
+	list.SetMainTextColor(TextColor)
 	list.SetSelectedBackgroundColor(conf.GetColor(config.MenuSelectedColor))
 	list.SetSelectedTextColor(tcell.ColorWhite)
 	list.SetBorderColor(conf.GetColor(config.MenuSelectedColor))
 	list.SetSelectedFocusOnly(false)
 
-	// Gestion de la pile pour pouvoir fermer avec ESC
+	// Stack management to be able to close with ESC
 	pageName := "popup_" + title
 	m.menuStack = append(m.menuStack, pageName)
 
@@ -505,7 +503,7 @@ func (m *AppMenuBar) ShowMenuPopup(title string, entries []MenuEntry) {
 		})
 	}
 
-	// Capture clavier pour quitter ou naviguer
+	// Keyboard capture to quit or navigate
 	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		currIdx := list.GetCurrentItem()
 		switch event.Key() {

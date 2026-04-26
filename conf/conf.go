@@ -26,7 +26,6 @@ const (
 	APP_FOLDER        = ".bled"
 	ICON_MODIFIED     = "●"
 	APP_ICON          = "⚶"
-	NEW_FILE_TEMPLATE = "noname_"
 	FILE_CONFIG       = "config.json"
 	FILE_LOG          = "bled.log"
 	FILE_MACROS       = "macros"
@@ -38,8 +37,6 @@ const (
 type Config struct {
 	MenuBgColor       string `json:"menu_bg_color"`
 	MenuSelectedColor string `json:"menu_selected_color"`
-	MenuTextColor     string `json:"menu_text_color"`
-	MenuDisabledColor string `json:"menu_disabled_color"`
 	ShowWelcomePopup  bool   `json:"show_welcome_popup"`
 	ConfirmOnQuit     bool   `json:"confirm_on_quit"`
 	ShowHiddenFiles   bool   `json:"show_hidden_files"`
@@ -156,8 +153,6 @@ func LoadConfig() Config {
 	conf := Config{
 		MenuBgColor:       "#4682B4",
 		MenuSelectedColor: "#A0522D",
-		MenuTextColor:     "black",
-		MenuDisabledColor: "gray",
 		ShowWelcomePopup:  true,
 		ConfirmOnQuit:     true,
 		ShowHiddenFiles:   false,

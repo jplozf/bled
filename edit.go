@@ -127,7 +127,7 @@ func newFile() {
 			break // The name is unique, we can use it
 		}
 		// Otherwise, generate the next name and check again
-		tempName = fmt.Sprintf("%s-%02d", conf.NEW_FILE_TEMPLATE, counter)
+		tempName = fmt.Sprintf("%s-%02d", conf.FILE_NEW_TEMPLATE, counter)
 		counter++
 	}
 

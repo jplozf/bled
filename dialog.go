@@ -97,7 +97,7 @@ func (m *Dialog) YesNoCancel(title string, message string, done func(rc DlgButto
 
 	m.SetButtonsAlign(tview.AlignCenter)
 	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
-	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetButtonTextColor(TextColor)
 	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
 		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
@@ -125,7 +125,7 @@ func (m *Dialog) YesNo(title string, message string, done func(rc DlgButton, idx
 
 	m.SetButtonsAlign(tview.AlignCenter)
 	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
-	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetButtonTextColor(TextColor)
 	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
 		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
@@ -152,7 +152,7 @@ func (m *Dialog) OK(title string, message string, done func(rc DlgButton, idx in
 
 	m.SetButtonsAlign(tview.AlignCenter)
 	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
-	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetButtonTextColor(TextColor)
 	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
 		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
@@ -178,7 +178,7 @@ func (m *Dialog) Info(title string, message string, done func(rc DlgButton, idx 
 
 	m.SetButtonsAlign(tview.AlignCenter)
 	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
-	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetButtonTextColor(TextColor)
 	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
 		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
@@ -205,7 +205,7 @@ func (m *Dialog) Input(title string, message string, value string, done func(rc 
 
 	m.SetButtonsAlign(tview.AlignCenter)
 	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
-	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetButtonTextColor(TextColor)
 	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
 		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
@@ -235,7 +235,7 @@ func (m *Dialog) Command(title string, message string, value string, done func(r
 	m.IValues = 0
 	m.SetButtonsAlign(tview.AlignCenter)
 	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
-	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetButtonTextColor(TextColor)
 	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
 		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
@@ -261,7 +261,7 @@ func (m *Dialog) List(title string, message string, values []string, done func(r
 
 	m.SetButtonsAlign(tview.AlignCenter)
 	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
-	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetButtonTextColor(TextColor)
 	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
 		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
@@ -295,15 +295,15 @@ func (m *Dialog) FileBrowser(title string, path string, done func(rc DlgButton, 
 	m.UIList.SetOptions([]string{}, nil)
 	// m.UIList.SetSelectedFunc(m.selectPath)
 	m.UIList.SetFieldBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
-	m.UIList.SetFieldTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.UIList.SetFieldTextColor(TextColor)
 	m.UIList.SetListStyles(
-		tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuBgColor)).Foreground(conf.GetColor(conf.LoadConfig().MenuTextColor)), // Style normal
-		tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuSelectedColor)).Foreground(tcell.ColorWhite),                         // Style sélectionné
+		tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuBgColor)).Foreground(TextColor),               // Normal Style
+		tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuSelectedColor)).Foreground(SelectedTextColor), // Selected Style
 	)
 
 	m.SetButtonsAlign(tview.AlignCenter)
 	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
-	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetButtonTextColor(TextColor)
 	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
 		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).
@@ -338,15 +338,15 @@ func (m *Dialog) DeleteFileBrowser(title string, path string, done func(rc DlgBu
 	m.UIList.SetOptions([]string{}, nil)
 	// m.UIList.SetSelectedFunc(m.selectPath)
 	m.UIList.SetFieldBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor))
-	m.UIList.SetFieldTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.UIList.SetFieldTextColor(TextColor)
 	m.UIList.SetListStyles(
-		tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuBgColor)).Foreground(conf.GetColor(conf.LoadConfig().MenuTextColor)),
-		tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuSelectedColor)).Foreground(tcell.ColorWhite),
+		tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuBgColor)).Foreground(TextColor),
+		tcell.StyleDefault.Background(conf.GetColor(conf.LoadConfig().MenuSelectedColor)).Foreground(SelectedTextColor),
 	)
 
 	m.SetButtonsAlign(tview.AlignCenter)
 	m.SetButtonBackgroundColor(conf.GetColor(conf.LoadConfig().MenuSelectedColor))
-	m.SetButtonTextColor(conf.GetColor(conf.LoadConfig().MenuTextColor))
+	m.SetButtonTextColor(TextColor)
 	m.SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).SetBorderPadding(0, 0, 0, 0)
 	m.SetBorder(true).
 		SetBackgroundColor(conf.GetColor(conf.LoadConfig().MenuBgColor)).

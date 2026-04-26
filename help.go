@@ -33,6 +33,7 @@ F10 : Access to the main menu of Bled
 ⯈ Alternate common functions are also reachable through CTRL and ALT keys :
 
 CTRL + F : Switch to the "Find & Replace" panel
+CTRL + K : Toggle the "File Info" panel
 CTRL + L : Access to the main menu of Bled (same as F10)
 CTRL + S : Saves the current document being edited
 ALT  + S : Saves the current document being edited under another name
@@ -66,8 +67,6 @@ $                  : Same as "follow"
 
 menu_bg_color           : Background color of the menu bar
 menu_selected_color     : Background color of the selected menu item
-menu_text_color         : Color of the text in the menu
-menu_disabled_color     : Color of disabled menu items
 show_welcome_popup      : Whether to show a welcome popup at startup
 confirm_on_quit         : Whether to ask for confirmation when quitting with unsaved changes
 show_hidden_files       : Whether to show hidden files in the file browser dialog
@@ -81,8 +80,6 @@ Here is the default configuration file content, which is generated at first laun
 {                                                                                                                                
     "menu_bg_color": "#4682B4",                                                                                                  
     "menu_selected_color": "#A0522D",                                                                                            
-    "menu_text_color": "black",                                                                                                  
-    "menu_disabled_color": "gray",                                                                                               
     "show_welcome_popup": true,                                                                                                 
     "confirm_on_quit": true,                                                                                                     
     "theme": "monokai"                                                                               
@@ -224,7 +221,7 @@ They look like something like this :
 * bled.log         : Main log file
 * bled.log.bak     : Backup log file (used for archiving)
 * bled_YYYYMM.zip  : Archived log file by month
-* config.json      : Configuration file edited from menu "Settings")
+* config.json      : Configuration file (edited from menu "Settings")
 * macros           : Macros file (edited from menu "Macros")
 * recents          : List of recently opened files
 * templates        : Folder for templates (empty by default, use your own templates)

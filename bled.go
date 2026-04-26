@@ -96,6 +96,12 @@ func main() {
 		}
 
 		switch event.Key() {
+		case tcell.KeyCtrlK:
+			if CurrentFile != nil {
+				toggleInfoPanel()
+			}
+			return nil
+
 		case tcell.KeyCtrlC:
 			LocalClipboard = editor.Buf.Cursor.GetSelection()
 			if LocalClipboard != "" {
@@ -152,6 +158,11 @@ func main() {
 				layout.ResizeItem(gotoPanel, 0, 0)
 				app.SetFocus(editor)
 				gotoPanel.active = false
+			}
+			if infoPanelActive {
+				layout.ResizeItem(infoPanel, 0, 0)
+				app.SetFocus(editor)
+				infoPanelActive = false
 			}
 			return nil
 

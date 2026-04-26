@@ -47,6 +47,10 @@ var (
 	searchPanel                                                          *SearchPanel
 	gotoPanel                                                            *GotoPanel
 	statusBar                                                            *tview.Flex
+	HighlightedColor                                                     tcell.Color
+	TextColor                                                            tcell.Color
+	DisabledTextColor                                                    tcell.Color
+	SelectedTextColor                                                    tcell.Color
 )
 
 // ****************************************************************************
@@ -74,16 +78,11 @@ type GotoPanel struct {
 func NewSearchPanel() *SearchPanel {
 	s := &SearchPanel{
 		Flex:         tview.NewFlex().SetDirection(tview.FlexRow),
-		searchInput:  tview.NewInputField().SetLabel(" Find   : ").SetFieldWidth(30),
-		replaceInput: tview.NewInputField().SetLabel(" Replace: ").SetFieldWidth(30),
+		searchInput:  tview.NewInputField().SetLabel(" Find    : ").SetFieldWidth(30),
+		replaceInput: tview.NewInputField().SetLabel(" Replace : ").SetFieldWidth(30),
 		label:        tview.NewTextView().SetDynamicColors(true),
 		caseCheck:    tview.NewCheckbox().SetLabel(" Case sensitive : "),
 	}
-	// Colors for the search panel
-	s.searchInput.SetFieldBackgroundColor(conf.GetColor(config.MenuBgColor)).SetLabelColor(conf.GetColor(config.MenuTextColor)).SetFieldTextColor(conf.GetColor(config.MenuTextColor))
-	s.replaceInput.SetFieldBackgroundColor(conf.GetColor(config.MenuBgColor)).SetLabelColor(conf.GetColor(config.MenuTextColor)).SetFieldTextColor(conf.GetColor(config.MenuTextColor))
-	s.label.SetBackgroundColor(conf.GetColor(config.MenuBgColor))
-	s.caseCheck.SetFieldBackgroundColor(conf.GetColor(config.MenuTextColor)).SetLabelColor(conf.GetColor(config.MenuTextColor)).SetFieldTextColor(conf.GetColor(config.MenuSelectedColor))
 
 	// Action on case sensitivity change
 	s.caseCheck.SetChangedFunc(func(checked bool) {
@@ -129,8 +128,10 @@ func NewSearchPanel() *SearchPanel {
 	})
 
 	// Panel's style
-	s.searchInput.SetFieldBackgroundColor(tcell.ColorBlack).SetLabelColor(tcell.ColorBlack).SetFieldTextColor(tcell.ColorYellow)
-	s.replaceInput.SetFieldBackgroundColor(tcell.ColorBlack).SetLabelColor(tcell.ColorBlack).SetFieldTextColor(tcell.ColorYellow)
+	s.searchInput.SetFieldBackgroundColor(TextColor).SetLabelColor(TextColor).SetFieldTextColor(conf.GetColor(config.MenuBgColor))
+	s.replaceInput.SetFieldBackgroundColor(TextColor).SetLabelColor(TextColor).SetFieldTextColor(conf.GetColor(config.MenuBgColor))
+	s.caseCheck.SetFieldBackgroundColor(TextColor).SetLabelColor(TextColor).SetFieldTextColor(conf.GetColor(config.MenuBgColor))
+	s.label.SetBackgroundColor(conf.GetColor(config.MenuBgColor))
 
 	row1 := tview.NewFlex().
 		AddItem(s.searchInput, 0, 1, true).
@@ -156,7 +157,8 @@ func NewGotoPanel() *GotoPanel {
 		input: tview.NewInputField().SetLabel(" Goto : ").SetFieldWidth(30),
 		label: tview.NewTextView().SetDynamicColors(true).SetText(" (Ex: 50, 80%, -10, top, end)"),
 	}
-
+	g.input.SetFieldBackgroundColor(TextColor).SetLabelColor(TextColor).SetFieldTextColor(conf.GetColor(config.MenuBgColor))
+	g.label.SetBackgroundColor(conf.GetColor(config.MenuBgColor))
 	g.AddItem(g.input, 0, 1, true).
 		AddItem(g.label, 30, 0, false)
 
@@ -168,8 +170,13 @@ func NewGotoPanel() *GotoPanel {
 // ****************************************************************************
 func setUI() {
 	config = conf.LoadConfig()
+	TextColor = tcell.GetColor(utils.GetContrastedTextColor(config.MenuBgColor))
+	SelectedTextColor = tcell.GetColor(utils.GetContrastedTextColor(config.MenuSelectedColor))
 	tview.Styles.PrimitiveBackgroundColor = conf.GetColor(config.MenuBgColor)
-	tview.Styles.PrimaryTextColor = conf.GetColor(config.MenuTextColor)
+	tview.Styles.PrimaryTextColor = TextColor
+	_, targetHue := utils.GetClosestTargetHue(utils.HexToRGB(config.MenuSelectedColor))
+	r, g, b := utils.HexToRGB(config.MenuBgColor)
+	HighlightedColor = tcell.GetColor(utils.GetStyledTextColor(r, g, b, targetHue))
 
 	app = tview.NewApplication()
 	pages = tview.NewPages()
@@ -178,7 +185,7 @@ func setUI() {
 		SetDynamicColors(true)
 
 	status.SetBackgroundColor(conf.GetColor(config.MenuBgColor))
-	status.SetTextColor(conf.GetColor(config.MenuTextColor))
+	status.SetTextColor(TextColor)
 
 	// EDITOR
 	buffer := femto.NewBufferFromString(string(""), "./dummy")
@@ -236,7 +243,7 @@ func setUI() {
 			return
 		}
 		totalMatches = performSearch(text)
-		searchPanel.label.SetText(fmt.Sprintf(" [%s]%d occurence(s)[-]", conf.GetColor(config.MenuTextColor), totalMatches))
+		searchPanel.label.SetText(fmt.Sprintf(" [%s]%d occurence(s)[-]", TextColor, totalMatches))
 	})
 
 	searchPanel.searchInput.SetDoneFunc(func(key tcell.Key) {
@@ -255,12 +262,15 @@ func setUI() {
 		}
 	})
 
+	initInfoPanel()
+
 	// --- LAYOUT ---
 	layout = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(menuBar, 1, 0, false).
 		AddItem(editor, 0, 1, true).
 		AddItem(gotoPanel, 0, 0, false).
 		AddItem(searchPanel, 0, 0, false).
+		AddItem(infoPanel, 0, 0, false).
 		AddItem(statusBar, 1, 0, false)
 
 	pages.AddPage("main", layout, true, true)
@@ -318,7 +328,7 @@ func refreshStatus() {
 
 	cursorX, cursorY := editor.Cursor.X, editor.Cursor.Y
 	percent := getScrollPercentage()
-	fileStatus := fmt.Sprintf("[%s] [%s]%s[-]  Ln %d, Col %d", getFilePagination(), conf.GetColor(config.MenuSelectedColor), name, cursorY+1, cursorX+1)
+	fileStatus := fmt.Sprintf("[%s] [%s]%s[-]  Ln %d, Col %d", getFilePagination(), HighlightedColor, name, cursorY+1, cursorX+1)
 	statusFilePos.SetText(fileStatus)
 	statusBar.ResizeItem(statusFilePos, NetLength(fileStatus)+1, 1)
 
@@ -327,13 +337,16 @@ func refreshStatus() {
 
 	modifiedText := ""
 	if CurrentFile.ReadOnly {
-		modifiedText = fmt.Sprintf("[%s]READ-ONLY[-]", conf.GetColor(config.MenuSelectedColor))
+		// modifiedText = fmt.Sprintf("[%s]READ-ONLY[-]", conf.GetColor(config.MenuSelectedColor))
+		modifiedText = fmt.Sprintf("[%s]READ-ONLY[-]", HighlightedColor)
 		fileMenu[5].Disabled = true // Disable "Save" if the file is read-only
 	} else if CurrentFile.FemtoBuffer != nil && CurrentFile.FemtoBuffer.Modified() {
-		modifiedText = fmt.Sprintf("[%s]MODIFIED[-]", conf.GetColor(config.MenuSelectedColor))
+		// modifiedText = fmt.Sprintf("[%s]MODIFIED[-]", conf.GetColor(config.MenuSelectedColor))
+		modifiedText = fmt.Sprintf("[%s]MODIFIED[-]", HighlightedColor)
 		fileMenu[5].Disabled = false // Enable "Save"
 	} else if CurrentFile.FollowMode {
-		modifiedText = fmt.Sprintf("[%s]FOLLOWED[-]", conf.GetColor(config.MenuSelectedColor))
+		// modifiedText = fmt.Sprintf("[%s]FOLLOWED[-]", conf.GetColor(config.MenuSelectedColor))
+		modifiedText = fmt.Sprintf("[%s]FOLLOWED[-]", HighlightedColor)
 	} else {
 		modifiedText = ""
 	}
@@ -512,6 +525,7 @@ func setMenuUI() {
 		}, Shortcut: tcell.KeyCtrlF},
 		{Label: "Git Tracking", SubEntries: gitEntries, Action: func() { menuBar.ShowMenuPopup("Git Tracking", gitEntries) }, Shortcut: tcell.KeyF3},
 		{Label: "Macros", SubEntries: macroEntries, Action: func() { menuBar.ShowMenuPopup("Macros", macroEntries) }, Shortcut: tcell.KeyF5},
+		{Label: "Info", Action: func() { toggleInfoPanel() }, Shortcut: tcell.KeyCtrlK},
 	}
 	menuBar.AddMenu(" Edit ", editEntries)
 

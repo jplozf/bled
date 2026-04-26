@@ -30,22 +30,23 @@ This project is licensed under the terms of the [MIT license](https://www.mit.ed
 | Key | Action |
 | :--- | :--- |
 | **F1** | This help text |
-| **F3** | Jump to the "Git Tracking" menu |
+| **F3** | Jump to the **Git Tracking** menu |
 | **F4** | Jump to the next match of the current search query |
-| **F5** | Jump to the "Macros" menu |
+| **F5** | Jump to the **Macros** menu |
 | **F6** | Switch to the previous open file |
 | **F7** | Switch to the next open file |
 | **F10** | Access to the main menu of Bled |
 
 ### Common Functions
-* `CTRL + F` : Switch to the "Find & Replace" panel
+* `CTRL + F` : Switch to the **Find & Replace** panel
+* `CTRL + K` : Toggle the **File Info** panel
 * `CTRL + L` : Access to the main menu of Bled (same as `F10`)
 * `CTRL + S` : Saves the current document being edited
 * `ALT  + S` : Saves the current document being edited under another name
 * `CTRL + N` : Opens a new blank document
 * `CTRL + O` : Opens an existing document for editing
 * `CTRL + T` : Closes the current document
-* `CTRL + G` : Opens the "Goto" panel to jump to a specific part of the document
+* `CTRL + G` : Opens the **Goto** panel to jump to a specific part of the document
 * `CTRL + Q` : Quit Bled
 
 ### Text Editing
@@ -70,7 +71,7 @@ Navigating easily in the document :
 Settings are stored in a configuration file, as a **JSON** file located in the user's home directory : `~/.bled/config.json`.
 
 ### Available Settings
-* **Colors :** `menu_bg_color`, `menu_selected_color`, `menu_text_color`, `menu_disabled_color`.
+* **Colors :** `menu_bg_color`, `menu_selected_color`,
 * **Interface :** `show_welcome_popup`, `confirm_on_quit`, `show_hidden_files`.
 * **Editor :** `theme`, `max_recent_files`.
 * **GitHub :** `github_user`, `github_key`, `github_email`.
@@ -80,8 +81,6 @@ Settings are stored in a configuration file, as a **JSON** file located in the u
 {
     "menu_bg_color": "#4682B4",
     "menu_selected_color": "#A0522D",
-    "menu_text_color": "black",
-    "menu_disabled_color": "gray",
     "show_welcome_popup": true,
     "confirm_on_quit": true,
     "theme": "monokai"
