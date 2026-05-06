@@ -23,6 +23,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -92,6 +93,16 @@ func main() {
 		evkSaveAs := tcell.NewEventKey(tcell.KeyRune, 's', tcell.ModAlt)
 		if event.Key() == evkSaveAs.Key() && event.Rune() == evkSaveAs.Rune() && event.Modifiers() == evkSaveAs.Modifiers() {
 			SaveFileAs()
+			return nil
+		}
+
+		// ALT+Q
+		evkShell := tcell.NewEventKey(tcell.KeyRune, 'q', tcell.ModAlt)
+		if event.Key() == evkShell.Key() &&
+			event.Rune() == evkShell.Rune() &&
+			event.Modifiers() == evkShell.Modifiers() {
+
+			shellEscape()
 			return nil
 		}
 
@@ -803,4 +814,31 @@ var reTviewTags = regexp.MustCompile(`\[([a-zA-Z0-9:#,-]+|[:])\]`)
 func NetLength(s string) int {
 	cleanStr := reTviewTags.ReplaceAllString(s, "")
 	return len([]rune(cleanStr))
+}
+
+// ****************************************************************************
+// shellEscape()
+// ****************************************************************************
+func shellEscape() {
+	app.Suspend(func() {
+		shell := os.Getenv("SHELL")
+		if shell == "" {
+			shell = "/bin/sh"
+		}
+
+		cmd := exec.Command(shell)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		fmt.Println()
+		fmt.Println("--------- Temporary return to shell ---------")
+		fmt.Println("Type 'exit' or press Ctrl+D to return to Bled")
+		fmt.Println("---------------------------------------------")
+		fmt.Println()
+
+		_ = cmd.Run()
+
+		fmt.Println("Returning to Bled...")
+	})
 }

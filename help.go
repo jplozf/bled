@@ -42,6 +42,7 @@ CTRL + O : Opens an existing document for editing
 CTRL + T : Closes the current document
 CTRL + G : Opens the "Goto" panel to jump to a specific part of the document
 CTRL + Q : Quit Bled
+ALT  + Q : Temporarily return to the shell
 
 ⯈ When editing a text, common editing functions are of course supported :
 

@@ -48,6 +48,7 @@ This project is licensed under the terms of the [MIT license](https://www.mit.ed
 * `CTRL + T` : Closes the current document
 * `CTRL + G` : Opens the **Goto** panel to jump to a specific part of the document
 * `CTRL + Q` : Quit Bled
+* `ALT  + Q` : Temporarily return to the shell
 
 ### Text Editing
 * `CTRL + C` / `X` / `V` : Copy / Cut / Paste
