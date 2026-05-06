@@ -73,7 +73,7 @@ Settings are stored in a configuration file, as a **JSON** file located in the u
 
 ### Available Settings
 * **Colors :** `menu_bg_color`, `menu_selected_color`,
-* **Interface :** `show_welcome_popup`, `confirm_on_quit`, `show_hidden_files`.
+* **Interface :** `show_welcome_popup`, `confirm_on_quit`, `show_hidden_files`, `status_bar_separator`.
 * **Editor :** `theme`, `max_recent_files`.
 * **GitHub :** `github_user`, `github_key`, `github_email`.
 
@@ -84,7 +84,8 @@ Settings are stored in a configuration file, as a **JSON** file located in the u
     "menu_selected_color": "#A0522D",
     "show_welcome_popup": true,
     "confirm_on_quit": true,
-    "theme": "monokai"
+    "theme": "monokai",
+    "status_bar_separator": "*"
 }
 ```
 

@@ -384,7 +384,7 @@ func StartStatusConsumer() {
 	go func() {
 		for msg := range messageQueue {
 			ribbonMutex.Lock()
-			statusRibbon += " | " + msg
+			statusRibbon += " " + config.StatusBarSeparator + " " + msg
 			ribbonMutex.Unlock()
 		}
 	}()

@@ -76,6 +76,7 @@ github_user             : User name used for Github commits
 github_key              : Key used for Github operations
 github_email            : Email used for Github commits
 max_recent_files        : Maximum number of recent files to keep track of
+status_bar_separator    : Separator string used in the status bar (e.g. "|" or "•")
 
 Here is the default configuration file content, which is generated at first launch if not already present in the user's home directory :	
 {                                                                                                                                
@@ -83,7 +84,8 @@ Here is the default configuration file content, which is generated at first laun
     "menu_selected_color": "#A0522D",                                                                                            
     "show_welcome_popup": true,                                                                                                 
     "confirm_on_quit": true,                                                                                                     
-    "theme": "monokai"                                                                               
+    "theme": "monokai",
+    "status_bar_separator": "*"                                                                               
 }                                                                                                                                
 Don't forget to edit the "github_user", "github_key" and "github_email" fields if you want to use the GitHub integration features of Bled.
 
