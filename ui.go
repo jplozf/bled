@@ -464,6 +464,7 @@ func refreshFileMenu() {
 		{Label: "Save as", Action: func() { SaveFileAs() }},
 		{Label: "Close", Action: func() { closeCurrentFile() }, Shortcut: tcell.KeyCtrlT},
 		{Label: "Quit", Shortcut: tcell.KeyCtrlQ, Action: func() { safeQuit() }},
+		{Label: "Shell", Action: func() { shellEscape() }},
 		{IsSeparator: true},
 	}
 
