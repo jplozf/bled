@@ -83,12 +83,24 @@ func ReadMacros() {
 // XeqMacro()
 // ****************************************************************************
 func XeqMacro(k any) {
+	macroName := k.(string)
+	SetStatus("Executing macro : [" + macroName + "]")
+
+	macroContent := Macros[macroName]
+	if strings.HasPrefix(macroContent, "insert:") {
+		snippet := replaceVariablesInMacro(macroName)
+		finalSnippet := strings.TrimPrefix(snippet, "insert:")
+		finalSnippet = strings.ReplaceAll(finalSnippet, "\\n", "\n")
+		finalSnippet = strings.ReplaceAll(finalSnippet, "\\t", "\t")
+		finalSnippet = strings.ReplaceAll(finalSnippet, "\\r", "\r")
+		editor.Buf.Insert(editor.Buf.Cursor.Loc, finalSnippet)
+		SetStatus("Snippet inserted")
+		return
+	}
+
 	if CurrentFile.FemtoBuffer.Modified() {
 		saveFile()
 	}
-
-	macroName := k.(string)
-	SetStatus("Executing macro : [" + macroName + "]")
 
 	infoBefore, errBefore := os.Stat(CurrentFile.FName)
 

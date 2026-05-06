@@ -141,6 +141,13 @@ Open in Explorer : xdg-open %D
 
 This macro will use the "xdg-open" command to open the current file's directory (represented by the %D placeholder) in the default system explorer when executed.
 
+If the command to execute starts with "insert:', the rest of the command will be inserted into the current document at the current cursor position instead of being executed as a system command.
+
+For example, a macro to insert the current date and time into the document could be defined as follows :
+Insert Timestamp : insert:%T
+
+This macro will insert the current timestamp (represented by the %T placeholder) into the document at the current cursor position when executed.
+
 You can create as many macros as you want, and they will be available in the "Macros" menu for easy access.
 
 ⯈ Templates
