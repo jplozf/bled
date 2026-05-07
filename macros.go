@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pgavlin/femto"
 )
 
 // ****************************************************************************
@@ -88,12 +90,29 @@ func XeqMacro(k any) {
 
 	macroContent := Macros[macroName]
 	if strings.HasPrefix(macroContent, "insert:") {
+		if CurrentFile.ReadOnly {
+			SetStatus("Cannot insert snippet : file is read-only")
+			return
+		}
 		snippet := replaceVariablesInMacro(macroName)
 		finalSnippet := strings.TrimPrefix(snippet, "insert:")
 		finalSnippet = strings.ReplaceAll(finalSnippet, "\\n", "\n")
 		finalSnippet = strings.ReplaceAll(finalSnippet, "\\t", "\t")
 		finalSnippet = strings.ReplaceAll(finalSnippet, "\\r", "\r")
-		editor.Buf.Insert(editor.Buf.Cursor.Loc, finalSnippet)
+
+		startPos := editor.Buf.Cursor.Loc
+		cursorOffset := strings.Index(finalSnippet, "$0")
+		if cursorOffset != -1 {
+			finalSnippet = strings.Replace(finalSnippet, "$0", "", 1)
+		}
+
+		pos := editor.Buf.Cursor.Loc
+		editor.Buf.Insert(pos, finalSnippet)
+		if cursorOffset != -1 {
+			newLoc := calculateNewLocation(finalSnippet[:cursorOffset], startPos)
+			editor.Buf.Cursor.Loc = newLoc
+		}
+		editor.Buf.Cursor.Relocate()
 		SetStatus("Snippet inserted")
 		return
 	}
@@ -120,6 +139,24 @@ func XeqMacro(k any) {
 	MsgBox = MsgBox.OK("Macro : "+macroName, out, nil, 0, "main", editor)
 	pages.AddPage("msgBox", MsgBox.Popup(), true, false)
 	pages.ShowPage("msgBox")
+}
+
+func calculateNewLocation(textBeforeCursor string, start femto.Loc) femto.Loc {
+	lines := strings.Split(textBeforeCursor, "\n")
+	numLines := len(lines) - 1
+
+	newLoc := start
+	newLoc.Y += numLines
+
+	if numLines > 0 {
+		// Si on a changé de ligne, la colonne repart de l'index du dernier fragment
+		newLoc.X = len(lines[numLines])
+	} else {
+		// Si on est sur la même ligne, on ajoute simplement le nombre de caractères
+		newLoc.X += len(lines[0])
+	}
+
+	return newLoc
 }
 
 // ****************************************************************************
@@ -213,10 +250,45 @@ func editMacrosFile() {
 func refreshMacrosMenu() {
 	ReadMacros()
 	macroEntries = nil
+	snippetEntries = nil
+	commandEntries = nil
 	sortedMacros := slices.Sorted(maps.Keys(Macros))
-	for _, k := range sortedMacros {
-		macroEntries = append(macroEntries, MenuEntry{Label: k, Action: func() { XeqMacro(k) }})
+	for _, m := range sortedMacros {
+		mName, mContent := m, Macros[m]
+
+		entry := MenuEntry{
+			Label:  mName,
+			Action: func() { XeqMacro(mName) },
+		}
+
+		if strings.HasPrefix(mContent, "insert:") {
+			snippetEntries = append(snippetEntries, entry)
+		} else {
+			commandEntries = append(commandEntries, entry)
+		}
 	}
+	macroEntries = append(macroEntries, MenuEntry{
+		Label:      "Run Command",
+		SubEntries: commandEntries,
+	})
+	macroEntries = append(macroEntries, MenuEntry{
+		Label:      "Insert Snippet",
+		SubEntries: snippetEntries,
+	})
 	macroEntries = append(macroEntries, MenuEntry{IsSeparator: true})
 	macroEntries = append(macroEntries, MenuEntry{Label: "Edit macros file", Action: func() { editMacrosFile() }})
+}
+
+// ****************************************************************************
+// GetSnippets()
+// ****************************************************************************
+func GetSnippets() map[string]string {
+	snippets := make(map[string]string)
+	// On suppose que tes macros sont stockées dans conf.Macros (map[string]string)
+	for name, content := range Macros {
+		if strings.HasPrefix(content, "insert:") {
+			snippets[name] = content
+		}
+	}
+	return snippets
 }

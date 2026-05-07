@@ -38,6 +38,8 @@ var (
 	helpEntries                                                          []MenuEntry
 	gitEntries                                                           []MenuEntry
 	macroEntries                                                         []MenuEntry
+	snippetEntries                                                       []MenuEntry
+	commandEntries                                                       []MenuEntry
 	editor                                                               *femto.View
 	config                                                               conf.Config
 	MsgBox                                                               *Dialog

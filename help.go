@@ -139,16 +139,21 @@ Macros syntax is simple, each line in the macros file represents a macro, with t
 For example, a macro to open the current file in the default system editor could be defined as follows :
 Open in Explorer : xdg-open %D
 
-This macro will use the "xdg-open" command to open the current file's directory (represented by the %D placeholder) in the default system explorer when executed.
+This macro will use the "xdg-open" command to open the current file's directory (represented by the "%D" placeholder) in the default system explorer when executed.
 
 If the command to execute starts with "insert:', the rest of the command will be inserted into the current document at the current cursor position instead of being executed as a system command.
 
 For example, a macro to insert the current date and time into the document could be defined as follows :
 Insert Timestamp : insert:%T
 
-This macro will insert the current timestamp (represented by the %T placeholder) into the document at the current cursor position when executed.
+This macro will insert the current timestamp (represented by the "%T" placeholder) into the document at the current cursor position when executed.
+
+The position of the cursor after the insertion can be controlled using the special "$0" marker in the inserted text. 
+For example, the following macro will insert a main function template in Go and place the cursor at the beginning of the function body :
+Insert Go main : insert:func main() {\n\t$0\n}
 
 You can create as many macros as you want, and they will be available in the "Macros" menu for easy access.
+For convenience, the insert macros and the command macros are rendered in separate sub-menus in the "Macros" menu.
 
 ⯈ Templates
 

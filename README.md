@@ -152,7 +152,15 @@ For example, a macro to insert the current date and time into the document could
 
 This macro will insert the current timestamp (represented by the `%T` placeholder) into the document at the current cursor position when executed.
 
+The position of the cursor after the insertion can be controlled using the special `$0` marker in the inserted text. 
+
+For example, the following macro will insert a main function template in Go and place the cursor at the beginning of the function body :
+
+`Insert Go main : insert:func main() {\n\t$0\n}`
+
 You can create as many macros as you want, and they will be available in the **Macros** menu for easy access.
+
+For convenience, the insert macros and the command macros are rendered in separate sub-menus in the **Macros** menu.
 
 ## 📁 Templates
 * Templates for new files are located into the `~/.bled/templates` directory. 
